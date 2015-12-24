@@ -1,0 +1,7 @@
+.idea
+
+# Cruft
+.DS_Store
+
+# No Roms
+*.gb
