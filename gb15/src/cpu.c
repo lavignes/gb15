@@ -1339,15 +1339,12 @@ static GB15Instruction GB15_CBINSTRUCTIONS[256] = {
 
 void gb15_tick(GB15State *state, GB15VBlankCallback vblank, void *userdata) {
     if (state->tclocks == 0) {
-        if (state->regfile.pc == 0x00e8) {
-            state = (void *)state;
-        }
-        u8 instr = read8(&state->memmap, &state->regfile.pc);
-        if (instr == (u8)0xCB) {
-            instr = read8(&state->memmap, &state->regfile.pc);
-            GB15_CBINSTRUCTIONS[instr](instr, state, &state->regfile, &state->memmap);
+        u8 opcode = read8(&state->memmap, &state->regfile.pc);
+        if (opcode == (u8)0xCB) {
+            opcode = read8(&state->memmap, &state->regfile.pc);
+            GB15_CBINSTRUCTIONS[opcode](opcode, state, &state->regfile, &state->memmap);
         } else {
-            GB15_INSTRUCTIONS[instr](instr, state, &state->regfile, &state->memmap);
+            GB15_INSTRUCTIONS[opcode](opcode, state, &state->regfile, &state->memmap);
         }
         // Enable / Disable interrupts
         if (state->di_mclocks) {

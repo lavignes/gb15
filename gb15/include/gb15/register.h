@@ -6,15 +6,6 @@
 typedef struct GB15Register {
     union {
         struct {
-            u8 bit0: 1;
-            u8 bit1: 1;
-            u8 bit2: 1;
-            u8 bit3: 1;
-            u8 bit4: 1;
-            u8 bit5: 1;
-            u8 bit7: 1;
-        };
-        struct {
             u8 nil0: 1;
             u8 nil1: 1;
             u8 nil2: 1;
