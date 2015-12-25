@@ -20,21 +20,23 @@ static u8 bg_palette_for_data(u8 data, u8 bgp) {
         case 0x00:
             return bgp & (u8)0x03;
         case 0x01:
-            return bgp & (u8)0x0C;
+            return (bgp & (u8)0x0C) >> 2;
         case 0x02:
-            return bgp & (u8)0x30;
+            return (bgp & (u8)0x30 >> 4);
         case 0x03:
-            return bgp & (u8)0xC0;
+            return (bgp & (u8)0xC0 >> 6);
         default:
             break;
     }
     return 0;
 }
 
+#include <stdlib.h>
+
 static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, u8 bgp) {
     u16 tile_chars_offset = (lcdc & 0x08)? (u16)0x9C00 : (u16)0x9800;
-    u8 tile_x = (x + scx) / (u8)32;
-    u8 tile_y = (y + scy) / (u8)32;
+    u8 tile_x = (x + scx) / (u8)8;
+    u8 tile_y = (y + scy) / (u8)8;
     u16 tile_idx = tile_y * (u8)32 + tile_x;
     u8 char_code = gb15_memmap_read(memmap, tile_chars_offset + tile_idx);
     u16 char_data_address = (lcdc & 0x10)? ((u16)0x8000 + char_code) : (u16)((s16)0x8800 + signify8(char_code));
@@ -42,15 +44,16 @@ static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, 
     u8 char_y = ((y + scy) % (u8)8) * (u8)2;
     u8 bitlow = (u8)((gb15_memmap_read(memmap, char_data_address + char_y) & ((u8)1 << char_x)) != 0);
     u8 bithigh = (u8)((gb15_memmap_read(memmap, char_data_address + char_y + (u16)1) & ((u8)1 << char_x)) != 0);
-    switch (bg_palette_for_data((bithigh << (u8)1) | bitlow, bgp)) {
+//    switch (bg_palette_for_data((bithigh << (u8)1) | bitlow, bgp)) {
+    switch ((bithigh << (u8)1) | bitlow) {
         case 0x00:
-            return 0x000000FF;
-        case 0x01:
-            return 0x555555FF;
-        case 0x02:
-            return 0xAAAAAAFF;
-        case 0x03:
             return 0xFFFFFFFF;
+        case 0x01:
+            return 0xAAAAAAFF;
+        case 0x02:
+            return 0x555555FF;
+        case 0x03:
+            return 0x000000FF;
         default:
             break;
     }

@@ -2,7 +2,6 @@ set(SOURCE_DIR src)
 set(HEADER_DIR include/gb15)
 
 set(SOURCES
-        ${SOURCE_DIR}/register.c
         ${SOURCE_DIR}/memmap.c
         ${SOURCE_DIR}/cpu.c
         ${SOURCE_DIR}/bios.c
