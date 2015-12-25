@@ -1337,7 +1337,7 @@ static GB15Instruction GB15_CBINSTRUCTIONS[256] = {
     [0xFF] = cb_set_n_src,
 };
 
-void gb15_tick(GB15State *state, GB15HBlankCallback callback, void *userdata) {
+void gb15_tick(GB15State *state, GB15VBlankCallback vblank, void *userdata) {
     if (state->tclocks == 0) {
         u8 instr = read8(&state->memmap, &state->regfile.pc);
         if (instr == (u8)0xCB) {
@@ -1360,7 +1360,7 @@ void gb15_tick(GB15State *state, GB15HBlankCallback callback, void *userdata) {
             }
         }
     }
-    gb15_gpu_tick(state, callback, userdata);
+    gb15_gpu_tick(state, vblank, userdata);
     state->tclocks--;
 }
 

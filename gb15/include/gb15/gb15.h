@@ -6,6 +6,6 @@
 
 GB15_EXTERN void gb15_boot(GB15State *state, u8 *rom, uz romsize);
 
-GB15_EXTERN void gb15_tick(GB15State *state, GB15HBlankCallback vblank, void *userdata);
+GB15_EXTERN void gb15_tick(GB15State *state, GB15VBlankCallback vblank, void *userdata);
 
 #endif /* _GB15_H_ */

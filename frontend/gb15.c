@@ -10,7 +10,7 @@ typedef struct RenderState {
     SDL_Texture *texture;
 } RenderState;
 
-void hblank(GB15State *state, void *userdata) {
+void vblank(GB15State *state, void *userdata) {
     RenderState *render_state = userdata;
     SDL_Renderer *renderer = render_state->renderer;
     SDL_Texture *texture = render_state->texture;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     render_state.renderer = renderer;
     render_state.texture = texture;
 
-    FILE *file = fopen("cpu_instrs.gb", "rb");
+    FILE *file = fopen("tetris.gb", "rb");
     fseek(file, 0, SEEK_END);
     uz size = (uz)ftell(file);
     rewind(file);
@@ -152,13 +152,24 @@ int main(int argc, char *argv[]) {
 //        }
 //    }
 
+    u32 last_ticks = 0;
+    u32 total_ticks = 0;
+    u32 ticks = 0;
+
     do {
-        SDL_Event event;
-        SDL_PollEvent(&event);
-        if (event.type == SDL_QUIT) {
-            break;
+        total_ticks = SDL_GetTicks();
+        ticks++;
+        if (total_ticks > last_ticks + 1000) {
+            printf("cps: %d\n", ticks);
+            last_ticks = total_ticks;
+            ticks = 0;
         }
-        gb15_tick(state, hblank, &render_state);
+        gb15_tick(state, vblank, &render_state);
+//        SDL_Event event;
+//        SDL_PollEvent(&event);
+//        if (event.type == SDL_QUIT) {
+//            break;
+//        }
 //    } while (!state->stopped);
     } while (true);
 

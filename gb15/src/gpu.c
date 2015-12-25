@@ -34,7 +34,6 @@ static u8 bg_palette_for_data(u8 data, u8 bgp) {
 #include <stdlib.h>
 
 static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, u8 bgp) {
-    scy = 0;
     u16 tile_chars_offset = (lcdc & 0b00001000)? (u16)0x9C00 : (u16)0x9800;
     u8 tile_x = (x + scx) / (u8)8;
     u8 tile_y = (y + scy) / (u8)8;
@@ -61,7 +60,7 @@ static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, 
     return 0;
 }
 
-void gb15_gpu_tick(GB15State *state, GB15HBlankCallback hblank, void *userdata) {
+void gb15_gpu_tick(GB15State *state, GB15VBlankCallback vblank, void *userdata) {
     state->gpu_tclocks += state->tclocks;
     GB15MemMap *memmap = &state->memmap;
     u8 stat = gb15_memmap_read(memmap, GB15_REG_STAT);
@@ -76,7 +75,7 @@ void gb15_gpu_tick(GB15State *state, GB15HBlankCallback hblank, void *userdata) 
             state->gpu_tclocks = 0;
             if (ly == 143) {
                 mode = 0x01;
-                hblank(state, userdata);
+                vblank(state, userdata);
             } else {
                 mode = 0x02;
             }
