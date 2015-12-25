@@ -34,13 +34,13 @@ int main(int argc, char *argv[]) {
     render_state.renderer = renderer;
     render_state.texture = texture;
 
-    FILE *file = fopen("tetris.gb", "rb");
-    fseek(file, 0, SEEK_END);
-    uz size = (uz)ftell(file);
-    rewind(file);
-    u8 *rom = malloc(size);
-    fread(rom, 1, size, file);
-    fclose(file);
+//    FILE *file = fopen("cpu_instrs.gb", "rb");
+//    fseek(file, 0, SEEK_END);
+//    uz size = (uz)ftell(file);
+//    rewind(file);
+//    u8 *rom = malloc(size);
+//    fread(rom, 1, size, file);
+//    fclose(file);
 
 //    u8 rom[0x4000] = {
 //        0x3E, 0xE4,       // ld a, 0xE4
@@ -64,8 +64,93 @@ int main(int argc, char *argv[]) {
 //    };
 //    uz size = 0x4000;
 
+    u8 rom[0x4000] = {
+        0x3E, 0xE4,       // ld a, 0xE4
+        0xE0, 0x47,       // ldh (0x47), a  ; BGP = a
+        0x3E, 0x81,       // ld a, 0x81
+        0xE0, 0x40,       // ldh (0x40), a  ; LCDC = a
+        0x3E, 0x02,       // ld a, 0x02
+        0xE0, 0x41,       // ldh (0x41), a  ; STAT = a
+        0x3C,             // inc a
+//        0x47,             // ld b, a
+//        0xE0, 0x44,       // ldh a, (0x44)  ; a = LY
+//        0x3C,             // inc a
+//        0x3C,             // inc a
+
+//        0x80,             // add b
+//        0x0E, 0x03,       // ld c, 0x03
+//        0xCB, 0x29,       // sra c
+//        0xE0, 0x42,       // ldh (0x42), a  ; SCY = a
+//        0xE0, 0x43,       // ldh (0x43), a  ; SCX = a
+        0xC3, 0x0C, 0x00, // jp 0x000C
+        0x10,             // STOP
+    };
+    uz size = 0x4000;
+
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state, rom, size);
+
+    u8 vram[48] = {
+        0b00111100,
+        0b00111100,
+        0b01100110,
+        0b01100110,
+        0b01101110,
+        0b01101110,
+        0b01111110,
+        0b01111110,
+        0b01110110,
+        0b01110110,
+        0b01100110,
+        0b01100110,
+        0b00111100,
+        0b00111100,
+        0b00000000,
+        0b00000000,
+
+        0b00011000,
+        0b00000000,
+        0b00111000,
+        0b00000000,
+        0b01111000,
+        0b00000000,
+        0b00011000,
+        0b00000000,
+        0b00011000,
+        0b00000000,
+        0b00011000,
+        0b00000000,
+        0b00011000,
+        0b00000000,
+        0b00000000,
+        0b00000000,
+
+        0b00000000,
+        0b00111100,
+        0b00000000,
+        0b01100110,
+        0b00000000,
+        0b00000110,
+        0b00000000,
+        0b00001100,
+        0b00000000,
+        0b00011000,
+        0b00000000,
+        0b00110000,
+        0b00000000,
+        0b01111110,
+        0b00000000,
+        0b00000000,
+    };
+    for (u8 i = 0; i < 48; i++) {
+        gb15_memmap_write(&state->memmap, i + (u16)0x8800, vram[i]);
+    }
+
+    for (u8 i = 0; i < 32; i++) {
+        for (u8 j = 0; j < 20; j++) {
+            gb15_memmap_write(&state->memmap, i*(u8)32 + j + (u16)0x9800, j + i);
+        }
+    }
 
     do {
         SDL_Event event;
@@ -74,11 +159,11 @@ int main(int argc, char *argv[]) {
             break;
         }
         gb15_tick(state, hblank, &render_state);
-//    } while (!state->stopped);
-    } while (true);
+    } while (!state->stopped);
+//    } while (true);
 
     free(state);
-    free(rom);
+//    free(rom);
 
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
