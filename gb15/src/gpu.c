@@ -116,7 +116,7 @@ void gb15_gpu_tick(GB15State *state, GB15VBlankCallback vblank, void *userdata) 
                     u8 scx = gb15_memmap_read(memmap, GB15_REG_SCX);
                     u8 scy = gb15_memmap_read(memmap, GB15_REG_SCY);
                     u8 bgp = gb15_memmap_read(memmap, GB15_REG_BGP);
-                    for (u8 x = 0; x < 160; x ++) {
+                    for (u8 x = 0; x < 160; x++) {
                         state->screen[ly * 160 + x] = bg_pixel_at(x, ly, memmap, lcdc, scx, scy, bgp);
                     }
                 }

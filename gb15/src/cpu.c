@@ -421,7 +421,7 @@ static void alu_op_src(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15Me
             regfile->f_fine.c = sub8_carry(regfile->a, src_value);
             regfile->f_fine.h = sub8_half_carry(regfile->a, src_value);
             regfile->a -= src_value;
-            regfile->f_fine.z = (u8)(regfile->a == src_value);
+            regfile->f_fine.z = (u8)(regfile->a == 0);
             regfile->f_fine.n = 1;
             break;
         default:
@@ -1339,6 +1339,9 @@ static GB15Instruction GB15_CBINSTRUCTIONS[256] = {
 
 void gb15_tick(GB15State *state, GB15VBlankCallback vblank, void *userdata) {
     if (state->tclocks == 0) {
+        if (state->regfile.pc == 0x00e8) {
+            state = (void *)state;
+        }
         u8 instr = read8(&state->memmap, &state->regfile.pc);
         if (instr == (u8)0xCB) {
             instr = read8(&state->memmap, &state->regfile.pc);
@@ -1371,8 +1374,8 @@ void gb15_boot(GB15State *state, u8 *rom, uz romsize)
     GB15MemMap *memmap = &state->memmap;
     memcpy(memmap->bank0, rom, 0x4000);
     uz nbanks = romsize / 0x4000;
-    for (uz i = 0; i < nbanks; i++) {
-        memcpy(memmap->srom, rom + i * 0x4000, 0x4000);
+    for (uz i = 1; i < nbanks; i++) {
+        memcpy(memmap->srom[i], rom + i * 0x4000, 0x4000);
     }
 //    gb15_memmap_write(memmap, GB15_REG_BIOS, 0b00010000);
 //    GB15RegFile *regfile = &state->regfile;
