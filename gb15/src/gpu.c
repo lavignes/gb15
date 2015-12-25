@@ -45,8 +45,8 @@ static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, 
     u8 char_y = ((y + scy) % (u8)8) * (u8)2;
     u8 bitlow = (u8)((gb15_memmap_read(memmap, char_data_offset + char_y) & ((u8)1 << char_x)) != (u8)0);
     u8 bithigh = (u8)((gb15_memmap_read(memmap, char_data_offset + char_y + (u16)1) & ((u8)1 << char_x)) != (u8)0);
-//    switch (bg_palette_for_data((bithigh << (u8)1) | bitlow, bgp)) {
-    switch ((bithigh << (u8)1) | bitlow) {
+    switch (bg_palette_for_data((bithigh << (u8)1) | bitlow, bgp)) {
+//    switch ((bithigh << (u8)1) | bitlow) {
         case 0b00:
             return 0xFFFFFFFF;
         case 0b01:
