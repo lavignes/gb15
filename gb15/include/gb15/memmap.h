@@ -5,16 +5,6 @@
 
 typedef struct GB15MemMap {
     /**
-     * 0x0000 Fixed cart ROM bank 0.
-     */
-    u8 bank0[16384]; // 16KB
-
-    /**
-     * 0x4000 Switchable ROM banks. Up to 128 ROM banks?
-     */
-    u8 srom[128][16384]; // 16KB
-
-    /**
      * 0x8000 Video RAM (Two banks on Gameboy Color)
      */
     u8 vram[2][8192]; // 8KB
@@ -145,7 +135,7 @@ typedef enum GB15VirtualRegister {
 
 } GB15VirtualRegister;
 
-GB15_EXTERN u8 gb15_memmap_read(GB15MemMap *memmap, u16 address);
+GB15_EXTERN u8 gb15_memmap_read(GB15MemMap *memmap, u8 *rom, u16 address);
 GB15_EXTERN u8 gb15_memmap_write(GB15MemMap *memmap, u16 address, u8 value);
 
 #endif /* _GB15_MEMMAP_H_ */

@@ -26,7 +26,7 @@ void vblank(GB15State *state, void *userdata) {
 
 int main(int argc, char *argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window *window = SDL_CreateWindow("GB15", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 3, 144 * 3, SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("GB15", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 160 * 4, 144 * 4, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144);
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 //    uz size = 0x4000;
 
     GB15State *state = calloc(1, sizeof(GB15State));
-    gb15_boot(state, rom, size);
+    gb15_boot(state);
 
     u32 last_ticks = 0;
     u32 total_ticks = 0;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
             last_ticks = total_ticks;
             ticks = 0;
         }
-        gb15_tick(state, vblank, &render_state);
+        gb15_tick(state, rom, vblank, &render_state);
 //        SDL_Event event;
 //        SDL_PollEvent(&event);
 //        if (event.type == SDL_QUIT) {

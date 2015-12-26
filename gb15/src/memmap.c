@@ -5,15 +5,13 @@ static u8 himem(GB15MemMap *memmap, u16 address) {
     return memmap->himem[address - 0xFE00];
 }
 
-static u8 mbc0_read(GB15MemMap *memmap, u16 address) {
+static u8 mbc0_read(GB15MemMap *memmap, u8 *rom, u16 address) {
     switch (address) {
-        case 0x0000 ... 0x3FFF:
+        case 0x0000 ... 0x7FFF:
             if (himem(memmap, GB15_REG_BIOS) == 0x00 && address < 0x0100) {
                 return GB15_BIOS[address];
             }
-            return memmap->bank0[address];
-        case 0x4000 ... 0x7FFF:
-            return memmap->srom[0][address - 0x4000];
+            return rom[address];
         case 0x8000 ... 0x9FFF:
             return memmap->vram[himem(memmap, GB15_REG_VBK) & 0x01][address - 0x8000];
         case 0xA000 ... 0xBFFF:
@@ -23,7 +21,7 @@ static u8 mbc0_read(GB15MemMap *memmap, u16 address) {
         case 0xD000 ... 0xDFFF:
             return memmap->sram[himem(memmap, GB15_REG_VBK) & 0x07][address - 0xD000];
         case 0xE000 ... 0xFDFF:
-            return mbc0_read(memmap, address - (u16)0x1000);
+            return mbc0_read(memmap, rom, address - (u16)0x1000);
         case 0xFE00 ... 0xFFFF:
             return memmap->himem[address - 0xFE00];
         default:
@@ -52,8 +50,8 @@ static u8 mbc0_write(GB15MemMap *memmap, u16 address, u8 value) {
     return 0xFF;
 }
 
-u8 gb15_memmap_read(GB15MemMap *memmap, u16 address) {
-    return mbc0_read(memmap, address);
+u8 gb15_memmap_read(GB15MemMap *memmap, u8 *rom, u16 address) {
+    return mbc0_read(memmap, rom, address);
 }
 
 u8 gb15_memmap_write(GB15MemMap *memmap, u16 address, u8 value) {
