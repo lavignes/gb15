@@ -16,14 +16,8 @@ typedef struct GB15RegFile {
 
     union {
         struct {
-            union {
-                u8 a;
-                GB15Register a_fine;
-            };
-            union {
-                u8 f;
-                GB15Register f_fine;
-            };
+            u8 a;
+            u8 f;
         };
         union {
             u16 af;
@@ -33,14 +27,8 @@ typedef struct GB15RegFile {
 
     union {
         struct {
-            union {
-                u8 c;
-                GB15Register c_fine;
-            };
-            union {
-                u8 b;
-                GB15Register b_fine;
-            };
+            u8 c;
+            u8 b;
         };
         union {
             u16 bc;
@@ -50,14 +38,8 @@ typedef struct GB15RegFile {
 
     union {
         struct {
-            union {
-                u8 e;
-                GB15Register e_fine;
-            };
-            union {
-                u8 d;
-                GB15Register d_fine;
-            };
+            u8 e;
+            u8 d;
         };
         union {
             u16 de;
@@ -67,14 +49,8 @@ typedef struct GB15RegFile {
 
     union {
         struct {
-            union {
-                u8 l;
-                GB15Register l_fine;
-            };
-            union {
-                u8 h;
-                GB15Register h_fine;
-            };
+            u8 l;
+            u8 h;
         };
         union {
             u16 hl;

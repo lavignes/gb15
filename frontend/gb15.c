@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     render_state.renderer = renderer;
     render_state.texture = texture;
 
-    FILE *file = fopen("dr_mario.gb", "rb");
+    FILE *file = fopen("mario.gb", "rb");
     fseek(file, 0, SEEK_END);
     uz size = (uz)ftell(file);
     rewind(file);

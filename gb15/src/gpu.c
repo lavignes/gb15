@@ -32,17 +32,18 @@ static u8 bg_palette_for_data(u8 data, u8 bgp) {
 }
 
 static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, u8 bgp) {
-    u16 tile_chars_offset = (lcdc & 0b00001000)? (u16)0x9C00 : (u16)0x9800;
+    u16 bg_tile_map_table = (lcdc & 0b00001000)? (u16)0x9C00 : (u16)0x9800;
     u8 tile_x = (x + scx) >> (u8)3; // / 8;
     u8 tile_y = (y + scy) >> (u8)3; // / 8
     u16 tile_idx = ((u16)tile_y << (u16)5) + (u16)tile_x; // * 32 + tile_x
-    u8 char_code = gb15_memmap_read(memmap, NULL, tile_chars_offset + tile_idx);
-    u16 char_data_offset = (lcdc & (u8)0b00010000)? ((u16)0x8000 + char_code * (u16)16) : (u16)((s16)0x8800 + signify8(char_code) * (u16)16);
+    u8 tile_code = gb15_memmap_read(memmap, NULL, bg_tile_map_table + tile_idx);
+    u16 bg_pattern_table = (lcdc & (u8)0b00010000)? ((u16)0x8000 + tile_code * (u16)16) : (u16)((s16)0x8800 + signify8(tile_code) * (u16)16);
     u8 char_x = (x + scx) & (u8)0b111;            // % 8
     u8 char_y = ((y + scy) & (u8)0b111) << (u8)1; // % 8 * 2
-    u8 bitlow = (u8)((gb15_memmap_read(memmap, NULL, char_data_offset + char_y) & ((u8)0b10000000 >> char_x)) != (u8)0);
-    u8 bithigh = (u8)((gb15_memmap_read(memmap, NULL, char_data_offset + char_y + (u16)1) & ((u8)0b10000000 >> char_x)) != (u8)0);
+    u8 bitlow = (u8)((gb15_memmap_read(memmap, NULL, bg_pattern_table + char_y) & ((u8)0b10000000 >> char_x)) != (u8)0);
+    u8 bithigh = (u8)((gb15_memmap_read(memmap, NULL, bg_pattern_table + char_y + (u16)1) & ((u8)0b10000000 >> char_x)) != (u8)0);
     switch (bg_palette_for_data((bithigh << (u8)1) | bitlow, bgp)) {
+//    switch ((bithigh << (u8)1) | bitlow) {
         case 0b00:
             return 0xFFFFFFFF;
         case 0b01:
@@ -73,6 +74,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             if (ly == 143) {
                 mode = 0x01;
                 vblank(state, userdata);
+                state->vblanked = true;
             } else {
                 mode = 0x02;
             }

@@ -3,22 +3,6 @@
 
 #include <gb15/types.h>
 
-typedef struct GB15Register {
-    union {
-        struct {
-            u8 nil0: 1;
-            u8 nil1: 1;
-            u8 nil2: 1;
-            u8 c: 1;
-            u8 h: 1;
-            u8 n: 1;
-            u8 z: 1;
-        };
-        u8 value;
-    };
-
-} GB15Register;
-
 typedef struct GB15LongRegister {
     union {
         struct {

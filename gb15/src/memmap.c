@@ -1,7 +1,7 @@
 #include <gb15/memmap.h>
 #include <gb15/bios.h>
 
-static u8 himem(GB15MemMap *memmap, u16 address) {
+static inline u8 himem(GB15MemMap *memmap, u16 address) {
     return memmap->himem[address - 0xFE00];
 }
 
