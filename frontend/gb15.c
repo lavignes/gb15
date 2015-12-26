@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     render_state.renderer = renderer;
     render_state.texture = texture;
 
-    FILE *file = fopen("tetris.gb", "rb");
+    FILE *file = fopen("dr_mario.gb", "rb");
     fseek(file, 0, SEEK_END);
     uz size = (uz)ftell(file);
     rewind(file);
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
 //        if (event.type == SDL_QUIT) {
 //            break;
 //        }
-    } while (!state->stopped);
-//    } while (true);
+//    } while (!state->stopped);
+    } while (true);
 
     free(state);
     free(rom);

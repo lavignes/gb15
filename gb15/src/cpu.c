@@ -1374,6 +1374,7 @@ void gb15_boot(GB15State *state, u8 *rom, uz romsize)
     for (uz i = 1; i < nbanks; i++) {
         memcpy(memmap->srom[i], rom + i * 0x4000, 0x4000);
     }
+
 //    gb15_memmap_write(memmap, GB15_REG_BIOS, 0b00010000);
 //    GB15RegFile *regfile = &state->regfile;
 //    regfile->a = 0x11;
