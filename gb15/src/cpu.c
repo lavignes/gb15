@@ -275,108 +275,36 @@ static inline void sla(GB15State *state, GB15RegFile *regfile, GB15MemMap *memma
 }
 
 static inline void sra(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom, u8 reg) {
-    switch (reg) {
-        case 0x00: // b
-            state->tclocks = 8;
-            set_c(regfile, regfile->b & (u8)0x01);
-            regfile->b = (regfile->b >> (u8)1) | (regfile->b & (u8)0b10000000);
-            set_z(regfile, regfile->b == (u8)0x00);
-            break;
-        case 0x01: // c
-            state->tclocks = 8;
-            set_c(regfile, regfile->c & (u8)0x01);
-            regfile->c = (regfile->c >> (u8)1) | (regfile->c & (u8)0b10000000);
-            set_z(regfile, regfile->c == (u8)0x00);
-            break;
-        case 0x02: // d
-            state->tclocks = 8;
-            set_c(regfile, regfile->d & (u8)0x01);
-            regfile->d = (regfile->d >> (u8)1) | (regfile->d & (u8)0b10000000);
-            set_z(regfile, regfile->d == (u8)0x00);
-            break;
-        case 0x03: // e
-            state->tclocks = 8;
-            set_c(regfile, regfile->e & (u8)0x01);
-            regfile->e = (regfile->e >> (u8)1) | (regfile->e & (u8)0b10000000);
-            set_z(regfile, regfile->e == (u8)0x00);
-            break;
-        case 0x04: // h
-            state->tclocks = 8;
-            set_c(regfile, regfile->h & (u8)0x01);
-            regfile->h = (regfile->h >> (u8)1) | (regfile->h & (u8)0b10000000);
-            set_z(regfile, regfile->h == (u8)0x00);
-            break;
-        case 0x05: // l
-            state->tclocks = 8;
-            set_c(regfile, regfile->l & (u8)0x01);
-            regfile->l = (regfile->l >> (u8)1) | (regfile->l & (u8)0b10000000);
-            set_z(regfile, regfile->l == (u8)0x00);
-            break;
-        case 0x06: // (hl)
-            state->tclocks = 16;
-            reg = gb15_memmap_read(memmap, rom, regfile->hl);
-            set_c(regfile, reg & (u8)0x01);
-            reg = (reg >> (u8)1) | (reg & (u8)0b10000000);
-            set_z(regfile, reg == (u8)0x00);
-            gb15_memmap_write(memmap, regfile->hl, reg);
-            break;
-        default:
-        case 0x07: // a
-            state->tclocks = 8;
-            set_c(regfile, regfile->a & (u8)0x01);
-            regfile->a = (regfile->a >> (u8)1) | (regfile->a & (u8)0b10000000);
-            set_z(regfile, regfile->a == (u8)0x00);
-            break;
+    u8 *dest = reg8(regfile, reg);
+    if (dest) { // a - l
+        state->tclocks = 8;
+        set_c(regfile, *dest & (u8)0x01);
+        *dest = (*dest >> (u8)1) | (*dest & (u8)0b10000000);
+        set_z(regfile, *dest == (u8)0x00);
+    } else { // (hl)
+        state->tclocks = 16;
+        reg = gb15_memmap_read(memmap, rom, regfile->hl);
+        set_c(regfile, reg & (u8)0x01);
+        reg = (reg >> (u8)1) | (reg & (u8)0b10000000);
+        set_z(regfile, reg == (u8)0x00);
+        gb15_memmap_write(memmap, regfile->hl, reg);
     }
     set_n(regfile, false);
     set_h(regfile, false);
 }
 
 static inline void swap(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom, u8 reg) {
-    switch (reg) {
-        case 0x00: // b
-            state->tclocks = 8;
-            regfile->b = ((regfile->b & (u8)0xF0) >> (u8)4) & ((regfile->b & (u8)0x0F) << (u8)4);
-            set_z(regfile, regfile->b == (u8)0x00);
-            break;
-        case 0x01: // c
-            state->tclocks = 8;
-            regfile->c = ((regfile->c & (u8)0xF0) >> (u8)4) & ((regfile->c & (u8)0x0F) << (u8)4);
-            set_z(regfile, regfile->c == (u8)0x00);
-            break;
-        case 0x02: // d
-            state->tclocks = 8;
-            regfile->d = ((regfile->d & (u8)0xF0) >> (u8)4) & ((regfile->d & (u8)0x0F) << (u8)4);
-            set_z(regfile, regfile->d == (u8)0x00);
-            break;
-        case 0x03: // e
-            state->tclocks = 8;
-            regfile->e = ((regfile->e & (u8)0xF0) >> (u8)4) & ((regfile->e & (u8)0x0F) << (u8)4);
-            set_z(regfile, regfile->e == (u8)0x00);
-            break;
-        case 0x04: // h
-            state->tclocks = 8;
-            regfile->h = ((regfile->h & (u8)0xF0) >> (u8)4) & ((regfile->h & (u8)0x0F) << (u8)4);
-            set_z(regfile, regfile->h == (u8)0x00);
-            break;
-        case 0x05: // l
-            state->tclocks = 8;
-            regfile->l = ((regfile->l & (u8)0xF0) >> (u8)4) & ((regfile->l & (u8)0x0F) << (u8)4);
-            set_z(regfile, regfile->l == (u8)0x00);
-            break;
-        case 0x06: // (hl)
-            state->tclocks = 16;
-            reg = gb15_memmap_read(memmap, rom, regfile->hl);
-            reg = ((reg & (u8)0xF0) >> (u8)4) & ((reg & (u8)0x0F) << (u8)4);
-            set_z(regfile, reg == (u8)0x00);
-            gb15_memmap_write(memmap, regfile->hl, reg);
-            break;
-        default:
-        case 0x07: // a
-            state->tclocks = 8;
-            regfile->a = (regfile->a >> (u8)1) | (regfile->a & (u8)0b10000000);
-            set_z(regfile, regfile->a == (u8)0x00);
-            break;
+    u8 *dest = reg8(regfile, reg);
+    if (dest) { // a - l
+        state->tclocks = 8;
+        *dest = ((*dest & (u8)0xF0) >> (u8)4) & ((*dest & (u8)0x0F) << (u8)4);
+        set_z(regfile, *dest == (u8)0x00);
+    } else { // (hl)
+        state->tclocks = 16;
+        reg = gb15_memmap_read(memmap, rom, regfile->hl);
+        reg = ((reg & (u8)0xF0) >> (u8)4) & ((reg & (u8)0x0F) << (u8)4);
+        set_z(regfile, reg == (u8)0x00);
+        gb15_memmap_write(memmap, regfile->hl, reg);
     }
     set_c(regfile, false);
     set_n(regfile, false);
@@ -384,80 +312,26 @@ static inline void swap(GB15State *state, GB15RegFile *regfile, GB15MemMap *memm
 }
 
 static inline void bit(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom, u8 reg, u8 mask) {
-    switch (reg) {
-        case 0x00:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->b & mask) == (u8)0x00);
-            break;
-        case 0x01:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->c & mask) == (u8)0x00);
-            break;
-        case 0x02:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->d & mask) == (u8)0x00);
-            break;
-        case 0x03:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->e & mask) == (u8)0x00);
-            break;
-        case 0x04:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->h & mask) == (u8)0x00);
-            break;
-        case 0x05:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->l & mask) == (u8)0x00);
-            break;
-        case 0x06:
-            state->tclocks = 16;
-            set_z(regfile, (gb15_memmap_read(memmap, rom, regfile->hl) & mask) == (u8)0x00);
-            break;
-        default:
-        case 0x07:
-            state->tclocks = 8;
-            set_z(regfile, (regfile->a & mask) == (u8)0x00);
-            break;
+    u8 *dest = reg8(regfile, reg);
+    if (dest) {
+        state->tclocks = 8;
+        set_z(regfile, (*dest & mask) == (u8)0x00);
+    } else {
+        state->tclocks = 16;
+        set_z(regfile, (gb15_memmap_read(memmap, rom, regfile->hl) & mask) == (u8)0x00);
     }
     set_n(regfile, false);
     set_h(regfile, true);
 }
 
-static inline void set(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom, u8 reg, u8 mask, bool value) {
-    switch (reg) {
-        case 0x00:
-            state->tclocks = 8;
-            regfile->b |= mask;
-            break;
-        case 0x01:
-            state->tclocks = 8;
-            regfile->c |= mask;
-            break;
-        case 0x02:
-            state->tclocks = 8;
-            regfile->d |= mask;
-            break;
-        case 0x03:
-            state->tclocks = 8;
-            regfile->e |= mask;
-            break;
-        case 0x04:
-            state->tclocks = 8;
-            regfile->h |= mask;
-            break;
-        case 0x05:
-            state->tclocks = 8;
-            regfile->l |= mask;
-            break;
-        case 0x06:
-            state->tclocks = 16;
-            gb15_memmap_write(memmap, regfile->hl, gb15_memmap_read(memmap, rom, regfile->hl) | mask);
-            break;
-        default:
-        case 0x07:
-            state->tclocks = 8;
-            regfile->a |= mask;
-            break;
+static inline void set(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom, u8 reg, u8 bit, bool value) {
+    u8 *dest = reg8(regfile, reg);
+    if (dest) {
+        state->tclocks = 8;
+        *dest |= (u8)value << bit;
+    } else {
+        state->tclocks = 16;
+        gb15_memmap_write(memmap, regfile->hl, gb15_memmap_read(memmap, rom, regfile->hl) | ((u8)value << bit));
     }
 }
 
