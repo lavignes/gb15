@@ -16,8 +16,8 @@ typedef struct GB15RegFile {
 
     union {
         struct {
-            u8 a;
             u8 f;
+            u8 a;
         };
         union {
             u16 af;

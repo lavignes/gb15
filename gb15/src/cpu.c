@@ -878,8 +878,9 @@ static inline void cb(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15Mem
 static inline void call_u16(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 24;
     regfile->sp -= 2;
+    u16 dest = read16(memmap, rom, &regfile->pc);
     write16(memmap, regfile->sp, regfile->pc);
-    regfile->pc = read16(memmap, rom, &regfile->pc);
+    regfile->pc = dest;
 }
 
 static inline void adc_u8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -1147,11 +1148,31 @@ static const InstructionBundle INSTRUCTIONS[256] = {
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
     if (state->tclocks == 0) {
+        if (state->regfile.pc == 0x031F) {
+            state = (void *)state;
+        }
+        if (state->regfile.pc == 0x27e9) {
+            state = (void *)state;
+        }
+        if (state->regfile.pc == 0x0322) {
+            state = (void *)state;
+        }
+        if (state->regfile.pc == 0x2A07) {
+            state = (void *)state;
+        }
         GB15MemMap *memmap = &state->memmap;
         GB15RegFile *regfile = &state->regfile;
         u8 opcode = read8(memmap, rom, &regfile->pc);
         const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-//        printf("%.4x :: %s\n", regfile->pc - 1, bundle->name);
+//        printf("pc=%.4x|sp=%.4x|af=%.4x|bc=%.4x|de=%.4x|hl=%.4x|%.4x :: %s\n",
+//               regfile->pc,
+//               regfile->sp,
+//               regfile->af,
+//               regfile->bc,
+//               regfile->de,
+//               regfile->hl,
+//               regfile->pc - 1,
+//               bundle->name);
         bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
         // Enable / Disable interrupts
         if (state->di_mclocks) {

@@ -107,17 +107,21 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             }
             state->gpu_tclocks = 0;
             mode = 0x00;
+            if (ly > 143) {
+                break;
+            }
             if (lcdc & 0b10000000) {
                 if (lcdc & 0b00000001) {
-                    if (ly > 143) {
-                        break;
-                    }
                     u8 scx = gb15_memmap_read(memmap, NULL, GB15_REG_SCX);
                     u8 scy = gb15_memmap_read(memmap, NULL, GB15_REG_SCY);
                     u8 bgp = gb15_memmap_read(memmap, NULL, GB15_REG_BGP);
                     for (u8 x = 0; x < 160; x++) {
                         state->screen[ly * 160 + x] = bg_pixel_at(x, ly, memmap, lcdc, scx, scy, bgp);
                     }
+                }
+            } else {
+                for (u8 x = 0; x < 160; x++) {
+                    state->screen[ly * 160 + x] = 0xFFFFFFFF;
                 }
             }
             break;
