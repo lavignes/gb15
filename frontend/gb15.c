@@ -42,28 +42,6 @@ int main(int argc, char *argv[]) {
     fread(rom, 1, size, file);
     fclose(file);
 
-//    u8 rom[0x4000] = {
-//        0x3E, 0xE4,       // ld a, 0xE4
-//        0xE0, 0x47,       // ldh (0x47), a  ; BGP = a
-//        0x3E, 0x81,       // ld a, 0x81
-//        0xE0, 0x40,       // ldh (0x40), a  ; LCDC = a
-//        0x3E, 0x02,       // ld a, 0x02
-//        0xE0, 0x41,       // ldh (0x41), a  ; STAT = a
-//        0x21, 0x00, 0x88, // ld hl, 0x8800  ; hl = vram address
-//        0x3E, 0xF0,       // ld a, 0xF0
-//        0x22,             // ld (hl+), a
-//        0x22,             // ld (hl+), a
-//        0x3E, 0x01,       // ld a, 0x01
-//        0x3C,             // inc a          ; 0x0015
-//        0xE0, 0x42,       // ldh (0x42), a  ; SCY = a
-//        0x3D,             // dec a
-//        0x3C,             // inc a
-//        0xE0, 0x43,       // ldh (0x43), a  ; SCX = a
-//        0xC3, 0x15, 0x00, // jp 0x0014
-//        0x10,             // STOP
-//    };
-//    uz size = 0x4000;
-
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state);
 
@@ -85,7 +63,6 @@ int main(int argc, char *argv[]) {
 //        if (event.type == SDL_QUIT) {
 //            break;
 //        }
-//    } while (!state->stopped);
     } while (true);
 
     free(state);

@@ -38,11 +38,6 @@ typedef struct GB15State {
      */
     bool halted;
 
-    /**
-     * Vblank just started
-     */
-    bool vblanked;
-
     u32 gpu_tclocks;
     u32 screen[23040];
 

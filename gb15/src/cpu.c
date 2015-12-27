@@ -1148,18 +1148,6 @@ static const InstructionBundle INSTRUCTIONS[256] = {
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
     if (state->tclocks == 0) {
-        if (state->regfile.pc == 0x031F) {
-            state = (void *)state;
-        }
-        if (state->regfile.pc == 0x27e9) {
-            state = (void *)state;
-        }
-        if (state->regfile.pc == 0x0322) {
-            state = (void *)state;
-        }
-        if (state->regfile.pc == 0x2A07) {
-            state = (void *)state;
-        }
         GB15MemMap *memmap = &state->memmap;
         GB15RegFile *regfile = &state->regfile;
         u8 opcode = read8(memmap, rom, &regfile->pc);
