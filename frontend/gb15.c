@@ -23,11 +23,6 @@ void vblank_callback(GB15State *state, void *userdata) {
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    u32 delta_time = SDL_GetTicks() - render_state->last_time;
-    if (delta_time <= 16) {
-        SDL_Delay(16 - delta_time);
-    }
-    render_state->last_time = SDL_GetTicks();
 }
 
 int main(int argc, char *argv[]) {
@@ -39,9 +34,8 @@ int main(int argc, char *argv[]) {
     RenderState render_state;
     render_state.renderer = renderer;
     render_state.texture = texture;
-    render_state.last_time = SDL_GetTicks();
 
-    FILE *file = fopen("opus5.gb", "rb");
+    FILE *file = fopen("tetris.gb", "rb");
     fseek(file, 0, SEEK_END);
     uz size = (uz)ftell(file);
     rewind(file);
@@ -52,22 +46,26 @@ int main(int argc, char *argv[]) {
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state);
 
-//    u32 cycles = 0;
-//    u32 last_time = SDL_GetTicks();
+    u32 cycles = 0;
+    u32 second_timer = SDL_GetTicks();
+    u32 input_timer = SDL_GetTicks();
     while (true) {
-//        cycles++;
-//        if (SDL_GetTicks() - last_time >= 1000) {
-//            printf("cps: %d\n", cycles);
-//            cycles = 0;
-//            last_time = SDL_GetTicks();
-//        }
-
-        SDL_Event event;
-//        SDL_PollEvent(&event);
-        if (event.type == SDL_QUIT) {
-            break;
-        }
         gb15_tick(state, rom, vblank_callback, &render_state);
+        cycles++;
+        u32 current_time = SDL_GetTicks();
+        if (current_time - second_timer >= 1000) {
+            printf("cps: %d\n", cycles);
+            cycles = 0;
+            second_timer = current_time;
+        }
+        if (current_time - input_timer > 17) {
+            SDL_Event event;
+            SDL_PollEvent(&event);
+            if (event.type == SDL_QUIT) {
+                break;
+            }
+            input_timer = current_time;
+        }
     }
 
     free(state);

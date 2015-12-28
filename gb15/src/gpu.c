@@ -53,11 +53,10 @@ static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, 
         default:
             break;
     }
-    return 0;
+    return 0xFF0000FF;
 }
 
 void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
-    state->gpu_tclocks += state->tclocks;
     GB15MemMap *memmap = &state->memmap;
     u8 stat = memmap->io[GB15_IO_STAT];
     u8 mode = stat & (u8)0x03;
@@ -66,7 +65,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
     switch (mode) {
         case 0x00: // HBlank
             if (state->gpu_tclocks < 204) {
-                return;
+                break;
             }
             if (ly == 143) {
                 mode = 0x01;
@@ -86,7 +85,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
 
         case 0x01: // VBlank
             if (state->gpu_tclocks < 4560) {
-                return;
+                break;
             }
             if (ly > 153) {
                 ly = 0;
@@ -99,7 +98,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
 
         case 0x02: // OAM
             if (state->gpu_tclocks < 80) {
-                return;
+                break;
             }
             state->gpu_tclocks = 0;
             mode = 0x03;
@@ -107,7 +106,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
 
         case 0x03: // LCD
             if (state->gpu_tclocks < 172) {
-                return;
+                break;
             }
             state->gpu_tclocks = 0;
             mode = 0x00;
@@ -135,4 +134,5 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
     }
     memmap->io[GB15_IO_LY] = ly;
     memmap->io[GB15_IO_STAT] = stat;
+    state->gpu_tclocks++;
 }

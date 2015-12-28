@@ -8,8 +8,7 @@ set(GB15_VERSION_MINOR 1)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
 # Set base CFLAGS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Wextra -Werror \
-    -Wno-unused-result -Wno-unused-parameter -Wno-unused-function")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Wextra -Werror -Wno-unused-result -Wno-unused-parameter -Wno-unused-function")
 
 add_subdirectory(gb15)
 add_subdirectory(frontend)

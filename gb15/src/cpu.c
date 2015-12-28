@@ -1076,14 +1076,21 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
                    regfile->hl,
                    regfile->pc - 1,
                    regfile->sp,
-                   bundle->name);
+                   bundle->name
+            );
             u16 tmp_pc = regfile->pc;
             if (bundle->num_operands == 1) {
                 printf(" => %.2X", read8(memmap, rom, &tmp_pc));
             } else if (bundle->num_operands == 2) {
                 printf(" => %.4X", read16(memmap, rom, &tmp_pc));
             }
-            printf("\n");
+            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
+                   memmap->io[GB15_IO_LCDC],
+                   memmap->io[GB15_IO_STAT],
+                   memmap->io[GB15_IO_LY],
+                   memmap->io[GB15_IO_IE],
+                   memmap->io[GB15_IO_IF]
+            );
             bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
         }
         // Enable / Disable interrupts
