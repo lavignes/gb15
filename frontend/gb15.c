@@ -11,7 +11,7 @@ typedef struct RenderState {
     u32 last_time;
 } RenderState;
 
-void vblank(GB15State *state, void *userdata) {
+void vblank_callback(GB15State *state, void *userdata) {
     RenderState *render_state = userdata;
     SDL_Renderer *renderer = render_state->renderer;
     SDL_Texture *texture = render_state->texture;
@@ -52,21 +52,22 @@ int main(int argc, char *argv[]) {
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state);
 
-    u32 cycles = 0;
-    u32 last_time = SDL_GetTicks();
+//    u32 cycles = 0;
+//    u32 last_time = SDL_GetTicks();
     while (true) {
-        gb15_tick(state, rom, vblank, &render_state);
+//        cycles++;
+//        if (SDL_GetTicks() - last_time >= 1000) {
+//            printf("cps: %d\n", cycles);
+//            cycles = 0;
+//            last_time = SDL_GetTicks();
+//        }
+
         SDL_Event event;
-        cycles++;
-        if (SDL_GetTicks() - last_time >= 1000) {
-            printf("cps: %d\n", cycles);
-            cycles = 0;
-            last_time = SDL_GetTicks();
-        }
 //        SDL_PollEvent(&event);
         if (event.type == SDL_QUIT) {
             break;
         }
+        gb15_tick(state, rom, vblank_callback, &render_state);
     }
 
     free(state);
