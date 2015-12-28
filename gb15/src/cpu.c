@@ -30,52 +30,52 @@ static inline void write16(GB15MemMap *memmap, u16 address, u16 value) {
 }
 
 static inline void set_z(GB15RegFile *regfile, bool value) {
-    regfile->f = (regfile->f & (u8)0b01111111) | (value << (u8)7);
+    regfile->f = (regfile->f & (u8)0x7F) | (value << (u8)7);
 }
 
 static inline void set_n(GB15RegFile *regfile, bool value) {
-    regfile->f = (regfile->f & (u8)0b10111111) | (value << (u8)6);
+    regfile->f = (regfile->f & (u8)0xBF) | (value << (u8)6);
 }
 
 static inline void set_h(GB15RegFile *regfile, bool value) {
-    regfile->f = (regfile->f & (u8)0b11011111) | (value << (u8)5);
+    regfile->f = (regfile->f & (u8)0xDF) | (value << (u8)5);
 }
 
 static inline void set_c(GB15RegFile *regfile, bool value) {
-    regfile->f = (regfile->f & (u8)0b11101111) | (value << (u8)4);
+    regfile->f = (regfile->f & (u8)0xEF) | (value << (u8)4);
 }
 
 static inline u8 get_z(GB15RegFile *regfile) {
-    return (regfile->f & (u8)0b10000000) >> (u8)7;
+    return (regfile->f & (u8)0x80) >> (u8)7;
 }
 
 static inline u8 get_h(GB15RegFile *regfile) {
-    return (regfile->f & (u8)0b01000000) >> (u8)6;
+    return (regfile->f & (u8)0x40) >> (u8)6;
 }
 
 static inline u8 get_n(GB15RegFile *regfile) {
-    return (regfile->f & (u8)0b00100000) >> (u8)5;
+    return (regfile->f & (u8)0x20) >> (u8)5;
 }
 
 static inline u8 get_c(GB15RegFile *regfile) {
-    return (regfile->f & (u8)0b00010000) >> (u8)4;
+    return (regfile->f & (u8)0x10) >> (u8)4;
 }
 
 static inline u8 *reg8(GB15RegFile *regfile, u8 reg) {
     switch (reg) {
-        case 0b111:
+        case 0x07:
             return &regfile->a;
-        case 0b000:
+        case 0x00:
             return &regfile->b;
-        case 0b001:
+        case 0x01:
             return &regfile->c;
-        case 0b010:
+        case 0x02:
             return &regfile->d;
-        case 0b011:
+        case 0x03:
             return &regfile->e;
-        case 0b100:
+        case 0x04:
             return &regfile->h;
-        case 0b101:
+        case 0x05:
             return &regfile->l;
         default:
             return NULL;
@@ -84,13 +84,13 @@ static inline u8 *reg8(GB15RegFile *regfile, u8 reg) {
 
 static inline u16 *reg16(GB15RegFile *regfile, u8 reg) {
     switch (reg) {
-        case 0b00:
+        case 0x00:
             return &regfile->bc;
-        case 0b01:
+        case 0x01:
             return &regfile->de;
-        case 0b10:
+        case 0x02:
             return &regfile->hl;
-        case 0b11:
+        case 0x03:
             return &regfile->sp;
         default:
             return NULL;
@@ -99,13 +99,13 @@ static inline u16 *reg16(GB15RegFile *regfile, u8 reg) {
 
 static inline u16 *reg16_push_pop(GB15RegFile *regfile, u8 reg) {
     switch (reg) {
-        case 0b00:
+        case 0x00:
             return &regfile->bc;
-        case 0b01:
+        case 0x01:
             return &regfile->de;
-        case 0b10:
+        case 0x02:
             return &regfile->hl;
-        case 0b11:
+        case 0x03:
             return &regfile->af;
         default:
             return NULL;
@@ -176,14 +176,14 @@ static inline void rlc_core(GB15State *state, GB15RegFile *regfile, GB15MemMap *
     u8 *dest = reg8(regfile, reg);
     if (dest) { // a - l
         state->tclocks = 8;
-        carry = (*dest & (u8)0b10000000) >> (u8)7;
+        carry = (*dest & (u8)0x80) >> (u8)7;
         *dest = (*dest << (u8)1) | carry;
         set_c(regfile, carry);
         set_z(regfile, *dest == (u8)0x00);
     } else { // (hl)
         state->tclocks = 16;
         reg = gb15_memmap_read(memmap, rom, regfile->hl);
-        carry = (reg & (u8)0b10000000) >> (u8)7;
+        carry = (reg & (u8)0x80) >> (u8)7;
         reg = (reg << (u8)1) | carry;
         set_c(regfile, carry);
         set_z(regfile, reg == (u8)0x00);
@@ -219,13 +219,13 @@ static inline void rl_core(GB15State *state, GB15RegFile *regfile, GB15MemMap *m
     u8 *dest = reg8(regfile, reg);
     if (dest) { // a - l
         state->tclocks = 8;
-        set_c(regfile, (*dest & (u8)0b10000000) >> (u8)7);
+        set_c(regfile, (*dest & (u8)0x80) >> (u8)7);
         *dest = (*dest << (u8)1) | carry;
         set_z(regfile, *dest == (u8)0x00);
     } else { // (hl)
         state->tclocks = 16;
         reg = gb15_memmap_read(memmap, rom, regfile->hl);
-        set_c(regfile, (reg & (u8)0b10000000) >> (u8)7);
+        set_c(regfile, (reg & (u8)0x80) >> (u8)7);
         reg = (reg << (u8)1) | carry;
         set_z(regfile, reg == (u8)0x00);
         gb15_memmap_write(memmap, regfile->hl, reg);
@@ -255,13 +255,13 @@ static inline void rr_core(GB15State *state, GB15RegFile *regfile, GB15MemMap *m
 
 static inline bool test_cond(GB15RegFile *regfile, u8 cond) {
     switch (cond) {
-        case 0b00:
+        case 0x00:
             return !get_z(regfile);
-        case 0b01:
+        case 0x01:
             return get_z(regfile);
-        case 0b10:
+        case 0x02:
             return !get_c(regfile);
-        case 0b11:
+        case 0x03:
             return get_c(regfile);
         default:
             break;
@@ -278,13 +278,13 @@ static inline void sra(GB15State *state, GB15RegFile *regfile, GB15MemMap *memma
     if (dest) { // a - l
         state->tclocks = 8;
         set_c(regfile, *dest & (u8)0x01);
-        *dest = (*dest >> (u8)1) | (*dest & (u8)0b10000000);
+        *dest = (*dest >> (u8)1) | (*dest & (u8)0x80);
         set_z(regfile, *dest == (u8)0x00);
     } else { // (hl)
         state->tclocks = 16;
         reg = gb15_memmap_read(memmap, rom, regfile->hl);
         set_c(regfile, reg & (u8)0x01);
-        reg = (reg >> (u8)1) | (reg & (u8)0b10000000);
+        reg = (reg >> (u8)1) | (reg & (u8)0x80);
         set_z(regfile, reg == (u8)0x00);
         gb15_memmap_write(memmap, regfile->hl, reg);
     }
@@ -347,22 +347,22 @@ static inline void nop(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15Me
 
 static inline void ld_rr_u16(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 12;
-    *reg16(regfile, (opcode & (u8)0b00110000) >> (u8)4) = read16(memmap, rom, &regfile->pc);
+    *reg16(regfile, (opcode & (u8)0x30) >> (u8)4) = read16(memmap, rom, &regfile->pc);
 }
 
 static inline void ld_mem_rr_a(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    gb15_memmap_write(memmap, *reg16(regfile, (opcode & (u8)0b00110000) >> (u8)4), 0b111);
+    gb15_memmap_write(memmap, *reg16(regfile, (opcode & (u8)0x30) >> (u8)4), 0x07);
 }
 
 static inline void inc_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    (*reg16(regfile, (opcode & (u8)0b00110000) >> (u8)4))++;
+    (*reg16(regfile, (opcode & (u8)0x30) >> (u8)4))++;
 }
 
 static inline void inc_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    u8 *reg = reg8(regfile, (opcode & (u8)0b00111000) >> (u8)3);
+    u8 *reg = reg8(regfile, (opcode & (u8)0x38) >> (u8)3);
     set_h(regfile, (*reg & 0xF) == (u8)0x0);
     (*reg)++;
     set_z(regfile, *reg == (u8)0x00);
@@ -371,7 +371,7 @@ static inline void inc_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15
 
 static inline void dec_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    u8 *reg = reg8(regfile, (opcode & (u8)0b00111000) >> (u8)3);
+    u8 *reg = reg8(regfile, (opcode & (u8)0x38) >> (u8)3);
     (*reg)--;
     set_z(regfile, *reg == (u8)0x00);
     set_n(regfile, true);
@@ -380,11 +380,11 @@ static inline void dec_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15
 
 static inline void ld_r_u8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    *reg8(regfile, (opcode & (u8)0b00111000) >> (u8)3) = read8(memmap, rom, &regfile->pc);
+    *reg8(regfile, (opcode & (u8)0x38) >> (u8)3) = read8(memmap, rom, &regfile->pc);
 }
 
 static inline void rlca(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    rlc_core(state, regfile, memmap, rom, 0b111);
+    rlc_core(state, regfile, memmap, rom, 0x07);
     state->tclocks = 4;
     set_z(regfile, false);
 }
@@ -396,12 +396,12 @@ static inline void ld_mem_u16_sp(u8 opcode, GB15State *state, GB15RegFile *regfi
 
 static inline void ld_a_mem_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    regfile->a = gb15_memmap_read(memmap, rom, *reg16(regfile, (opcode & (u8)0b00110000) >> (u8)4));
+    regfile->a = gb15_memmap_read(memmap, rom, *reg16(regfile, (opcode & (u8)0x30) >> (u8)4));
 }
 
 static inline void add_hl_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    u32 overflow = (u32)regfile->hl + (u32)*reg16(regfile, (opcode & (u8)0b00110000) >> (u8)4);
+    u32 overflow = (u32)regfile->hl + (u32)*reg16(regfile, (opcode & (u8)0x30) >> (u8)4);
     set_n(regfile, false);
     set_c(regfile, overflow > (u32)0xFFFF);
     set_h(regfile, (overflow & (u32)0x0FFF) < (regfile->hl & (u32)0x0FFF));
@@ -410,11 +410,11 @@ static inline void add_hl_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, 
 
 static inline void dec_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    (*reg16(regfile, (opcode & (u8)0b00110000) >> (u8)4))--;
+    (*reg16(regfile, (opcode & (u8)0x30) >> (u8)4))--;
 }
 
 static inline void rrc(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    rrc_core(state, regfile, memmap, rom, opcode & (u8)0b111);
+    rrc_core(state, regfile, memmap, rom, opcode & (u8)0x07);
 }
 
 static inline void stop(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -424,7 +424,7 @@ static inline void stop(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15M
 }
 
 static inline void rla(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    rl_core(state, regfile, memmap, rom, 0b111, get_c(regfile));
+    rl_core(state, regfile, memmap, rom, 0x07, get_c(regfile));
     state->tclocks = 4;
     set_z(regfile, false);
 }
@@ -435,14 +435,14 @@ static inline void jr_s8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15
 }
 
 static inline void rra(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    rr_core(state, regfile, memmap, rom, 0b111, get_c(regfile));
+    rr_core(state, regfile, memmap, rom, 0x07, get_c(regfile));
     state->tclocks = 4;
     set_z(regfile, false);
 }
 
 static inline void jr_cond_s8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     u8 dest = read8(memmap, rom, &regfile->pc);
-    if (test_cond(regfile, (opcode & (u8)0b00011000) >> (u8)3)) {
+    if (test_cond(regfile, (opcode & (u8)0x18) >> (u8)3)) {
         state->tclocks = 12;
         regfile->pc += signify8(dest);
     } else {
@@ -548,17 +548,17 @@ static inline void ccf(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15Me
 
 static inline void ld_r_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    *reg8(regfile, (opcode & (u8)0b00111000) >> (u8)3) = *reg8(regfile, opcode & (u8)0b111);
+    *reg8(regfile, (opcode & (u8)0x38) >> (u8)3) = *reg8(regfile, opcode & (u8)0x07);
 }
 
 static inline void ld_r_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    *reg8(regfile, (opcode & (u8)0b00111000) >> (u8)3) = gb15_memmap_read(memmap, rom, regfile->hl);
+    *reg8(regfile, (opcode & (u8)0x38) >> (u8)3) = gb15_memmap_read(memmap, rom, regfile->hl);
 }
 
 static inline void ld_mem_hl_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 8;
-    gb15_memmap_write(memmap, regfile->hl, *reg8(regfile, opcode & (u8)0b111));
+    gb15_memmap_write(memmap, regfile->hl, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void halt(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -568,7 +568,7 @@ static inline void halt(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15M
 
 static inline void add_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    add_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111), 0);
+    add_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07), 0);
 }
 
 static inline void add_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -578,7 +578,7 @@ static inline void add_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile,
 
 static inline void adc_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    add_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111), get_c(regfile));
+    add_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07), get_c(regfile));
 }
 
 static inline void adc_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -588,7 +588,7 @@ static inline void adc_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile,
 
 static inline void sub_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    sub_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111));
+    sub_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void sub_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -598,7 +598,7 @@ static inline void sub_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile,
 
 static inline void sbc_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    sbc_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111));
+    sbc_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void sbc_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -608,7 +608,7 @@ static inline void sbc_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile,
 
 static inline void and_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    and_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111));
+    and_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void and_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -618,7 +618,7 @@ static inline void and_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile,
 
 static inline void xor_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    xor_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111));
+    xor_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void xor_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -628,7 +628,7 @@ static inline void xor_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile,
 
 static inline void or_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    or_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111));
+    or_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void or_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -638,7 +638,7 @@ static inline void or_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, 
 
 static inline void cp_r(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 4;
-    cp_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0b111));
+    cp_core(state, regfile, memmap, rom, *reg8(regfile, opcode & (u8)0x07));
 }
 
 static inline void cp_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -648,7 +648,7 @@ static inline void cp_mem_hl(u8 opcode, GB15State *state, GB15RegFile *regfile, 
 
 static inline void ret_cond(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     u8 dest = read8(memmap, rom, &regfile->sp);
-    if (test_cond(regfile, (opcode & (u8)0b00011000) >> (u8)3)) {
+    if (test_cond(regfile, (opcode & (u8)0x18) >> (u8)3)) {
         state->tclocks = 20;
         regfile->pc += signify8(dest);
     } else {
@@ -658,12 +658,12 @@ static inline void ret_cond(u8 opcode, GB15State *state, GB15RegFile *regfile, G
 
 static inline void pop_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 12;
-    *reg16_push_pop(regfile, (opcode & (u8)0b00110000) >> (u8)4) = read16(memmap, rom, &regfile->sp);
+    *reg16_push_pop(regfile, (opcode & (u8)0x30) >> (u8)4) = read16(memmap, rom, &regfile->sp);
 }
 
 static inline void jp_cond_u16(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     u16 dest = read16(memmap, rom, &regfile->pc);
-    if (test_cond(regfile, (opcode & (u8)0b00011000) >> (u8)3)) {
+    if (test_cond(regfile, (opcode & (u8)0x18) >> (u8)3)) {
         state->tclocks = 16;
         regfile->pc = dest;
     } else {
@@ -678,7 +678,7 @@ static inline void jp_u16(u8 opcode, GB15State *state, GB15RegFile *regfile, GB1
 
 static inline void call_cond_u16(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     u16 dest = read16(memmap, rom, &regfile->pc);
-    if (test_cond(regfile, (opcode & (u8)0b00011000) >> (u8)3)) {
+    if (test_cond(regfile, (opcode & (u8)0x18) >> (u8)3)) {
         state->tclocks = 24;
         regfile->sp -= 2;
         write16(memmap, regfile->sp, regfile->pc);
@@ -691,7 +691,7 @@ static inline void call_cond_u16(u8 opcode, GB15State *state, GB15RegFile *regfi
 static inline void push_rr(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 16;
     regfile->sp -= 2;
-    write16(memmap, regfile->sp, *reg16_push_pop(regfile, (opcode & (u8)0b00110000) >> (u8)4));
+    write16(memmap, regfile->sp, *reg16_push_pop(regfile, (opcode & (u8)0x30) >> (u8)4));
 }
 
 static inline void add_u8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -700,7 +700,7 @@ static inline void add_u8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB1
 }
 
 static inline void rst(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    rst_core(state, regfile, memmap, (u16)(opcode & (u8)0b00111000));
+    rst_core(state, regfile, memmap, (u16)(opcode & (u8)0x38));
 }
 
 static inline void ret(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -710,43 +710,43 @@ static inline void ret(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15Me
 
 static inline void cb(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     opcode = read8(memmap, rom, &regfile->pc);
-    u8 reg = opcode & (u8)0b111;
+    u8 reg = opcode & (u8)0x07;
     switch (opcode >> (u8)3) {
-        case 0b000:
+        case 0x00:
             rlc_core(state, regfile, memmap, rom, reg);
             break;
-        case 0b001:
+        case 0x01:
             rrc_core(state, regfile, memmap, rom, reg);
             break;
-        case 0b010:
+        case 0x02:
             rl_core(state, regfile, memmap, rom, reg, get_c(regfile));
             break;
-        case 0b011:
+        case 0x03:
             rr_core(state, regfile, memmap, rom, reg, get_c(regfile));
             break;
-        case 0b100:
+        case 0x04:
             sla(state, regfile, memmap, rom, reg);
             break;
-        case 0b101:
+        case 0x05:
             sra(state, regfile, memmap, rom, reg);
             break;
-        case 0b110:
+        case 0x06:
             swap(state, regfile, memmap, rom, reg);
             break;
-        case 0b111:
+        case 0x07:
             rr_core(state, regfile, memmap, rom, reg, 0);
             break;
         default:
-            switch ((opcode & (u8)0b11000000) >> (u8)6) {
-                case 0b01:
-                    bit(state, regfile, memmap, rom, reg, (u8)1 << ((opcode & (u8)0b00111000) >> (u8)3));
+            switch ((opcode & (u8)0xC0) >> (u8)6) {
+                case 0x01:
+                    bit(state, regfile, memmap, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3));
                     break;
-                case 0b10:
-                    set(state, regfile, memmap, rom, reg, (u8)1 << ((opcode & (u8)0b00111000) >> (u8)3), false);
+                case 0x02:
+                    set(state, regfile, memmap, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), false);
                     break;
                 default:
-                case 0b11:
-                    set(state, regfile, memmap, rom, reg, (u8)1 << ((opcode & (u8)0b00111000) >> (u8)3), true);
+                case 0x03:
+                    set(state, regfile, memmap, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), true);
                     break;
             }
     }
@@ -1032,29 +1032,29 @@ static inline bool handle_interrupt(GB15State *state, GB15RegFile *regfile, GB15
     if (flags == 0x00) {
         return true;
     }
-    if (flags & 0b00001) { // vblank
+    if (flags & 0x01) { // vblank
         rst_core(state, regfile, memmap, 0x0040);
-        memmap->io[GB15_IO_IF] ^= 0b00001;
+        memmap->io[GB15_IO_IF] ^= 0x01;
         return false;
     }
-    if (flags & 0b00010) { // lcd stat
+    if (flags & 0x02) { // lcd stat
         rst_core(state, regfile, memmap, 0x0048);
-        memmap->io[GB15_IO_IF] ^= 0b00010;
+        memmap->io[GB15_IO_IF] ^= 0x02;
         return false;
     }
-    if (flags & 0b00100) { // timer
+    if (flags & 0x04) { // timer
         rst_core(state, regfile, memmap, 0x0050);
-        memmap->io[GB15_IO_IF] ^= 0b00100;
+        memmap->io[GB15_IO_IF] ^= 0x04;
         return false;
     }
-    if (flags & 0b01000) { // serial
+    if (flags & 0x08) { // serial
         rst_core(state, regfile, memmap, 0x0058);
-        memmap->io[GB15_IO_IF] ^= 0b01000;
+        memmap->io[GB15_IO_IF] ^= 0x08;
         return false;
     }
     // joypad
     rst_core(state, regfile, memmap, 0x0060);
-    memmap->io[GB15_IO_IF] ^= 0b10000;
+    memmap->io[GB15_IO_IF] ^= 0x10;
     return false;
 }
 

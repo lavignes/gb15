@@ -38,7 +38,7 @@ typedef struct GB15State {
      */
     u32 gpu_tclocks;
     u32 lcd[23040];
-    u32 bg_tiles[23040];
+    u32 pattern_table[23040];
 
 } GB15State;
 

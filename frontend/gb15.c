@@ -8,6 +8,7 @@
 typedef struct RenderState {
     SDL_Renderer *renderer;
     SDL_Texture *texture;
+    u32 last_time;
 } RenderState;
 
 void vblank(GB15State *state, void *userdata) {
@@ -22,6 +23,11 @@ void vblank(GB15State *state, void *userdata) {
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
+    u32 delta_time = SDL_GetTicks() - render_state->last_time;
+    if (delta_time <= 16) {
+        SDL_Delay(16 - delta_time);
+    }
+    render_state->last_time = SDL_GetTicks();
 }
 
 int main(int argc, char *argv[]) {
@@ -33,6 +39,7 @@ int main(int argc, char *argv[]) {
     RenderState render_state;
     render_state.renderer = renderer;
     render_state.texture = texture;
+    render_state.last_time = SDL_GetTicks();
 
     FILE *file = fopen("opus5.gb", "rb");
     fseek(file, 0, SEEK_END);
@@ -45,23 +52,12 @@ int main(int argc, char *argv[]) {
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state);
 
-    u32 ticks = 0;
-    u32 last_time = SDL_GetTicks();
     while (true) {
         gb15_tick(state, rom, vblank, &render_state);
-        ticks++;
-        if (ticks >= 17556) {
-            u32 delta_time = SDL_GetTicks() - last_time;
-            if (delta_time <= 16) {
-                SDL_Delay(16 - delta_time);
-            }
-            last_time = SDL_GetTicks();
-            ticks = 0;
-//        SDL_Event event;
+        SDL_Event event;
 //        SDL_PollEvent(&event);
-//        if (event.type == SDL_QUIT) {
-//            break;
-//        }
+        if (event.type == SDL_QUIT) {
+            break;
         }
     }
 

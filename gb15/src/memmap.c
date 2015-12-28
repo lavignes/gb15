@@ -9,13 +9,13 @@ static u8 mbc0_read(GB15MemMap *memmap, u8 *rom, u16 address) {
             }
             return rom[address];
         case 0x8000 ... 0x9FFF:
-            return memmap->vram[memmap->io[GB15_IO_VBK] & 0b1][address - (u16)0x8000];
+            return memmap->vram[memmap->io[GB15_IO_VBK] & 0x01][address - (u16)0x8000];
         case 0xA000 ... 0xBFFF:
             return memmap->cram[address - (u16)0xA000];
         case 0xC000 ... 0xCFFF:
             return memmap->wram[address - (u16)0xC000];
         case 0xD000 ... 0xDFFF:
-            return memmap->sram[memmap->io[GB15_IO_VBK] & 0b111][address - (u16)0xD000];
+            return memmap->sram[memmap->io[GB15_IO_VBK] & 0x07][address - (u16)0xD000];
         case 0xE000 ... 0xFDFF:
             return mbc0_read(memmap, rom, address - (u16)0x1000);
         case 0xFE00 ... 0xFE9F:
@@ -34,13 +34,13 @@ static u8 mbc0_read(GB15MemMap *memmap, u8 *rom, u16 address) {
 static u8 mbc0_write(GB15MemMap *memmap, u16 address, u8 value) {
     switch (address) {
         case 0x8000 ... 0x9FFF:
-            return memmap->vram[memmap->io[GB15_IO_VBK] & 0b1][address - (u16)0x8000] = value;
+            return memmap->vram[memmap->io[GB15_IO_VBK] & 0x01][address - (u16)0x8000] = value;
         case 0xA000 ... 0xBFFF:
             return memmap->cram[address - (u16)0xA000] = value;
         case 0xC000 ... 0xCFFF:
             return memmap->wram[address - (u16)0xC000] = value;
         case 0xD000 ... 0xDFFF:
-            return memmap->sram[memmap->io[GB15_IO_VBK] & 0b111][address - (u16)0xD000] = value;
+            return memmap->sram[memmap->io[GB15_IO_VBK] & 0x07][address - (u16)0xD000] = value;
         case 0xE000 ... 0xFDFF:
             return mbc0_write(memmap, address - (u16)0x1000, value);
         case 0xFE00 ... 0xFE9F:
