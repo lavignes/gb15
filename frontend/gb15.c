@@ -17,7 +17,7 @@ void vblank(GB15State *state, void *userdata) {
     void *pixels;
     int pitch;
     SDL_LockTexture(texture, NULL, &pixels, &pitch);
-    memcpy(pixels, state->screen, sizeof(u32) * 23040);
+    memcpy(pixels, state->lcd, sizeof(u32) * 23040);
     SDL_UnlockTexture(texture);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     render_state.renderer = renderer;
     render_state.texture = texture;
 
-    FILE *file = fopen("tetris.gb", "rb");
+    FILE *file = fopen("opus5.gb", "rb");
     fseek(file, 0, SEEK_END);
     uz size = (uz)ftell(file);
     rewind(file);
@@ -45,25 +45,25 @@ int main(int argc, char *argv[]) {
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state);
 
-    u32 last_ticks = 0;
-    u32 total_ticks = 0;
     u32 ticks = 0;
-
-    do {
-        total_ticks = SDL_GetTicks();
-        ticks++;
-        if (total_ticks > last_ticks + 1000) {
-            printf("cps: %d\n", ticks);
-            last_ticks = total_ticks;
-            ticks = 0;
-        }
+    u32 last_time = SDL_GetTicks();
+    while (true) {
         gb15_tick(state, rom, vblank, &render_state);
+        ticks++;
+        if (ticks >= 17556) {
+            u32 delta_time = SDL_GetTicks() - last_time;
+            if (delta_time <= 16) {
+                SDL_Delay(16 - delta_time);
+            }
+            last_time = SDL_GetTicks();
+            ticks = 0;
 //        SDL_Event event;
 //        SDL_PollEvent(&event);
 //        if (event.type == SDL_QUIT) {
 //            break;
 //        }
-    } while (true);
+        }
+    }
 
     free(state);
     free(rom);

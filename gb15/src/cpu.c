@@ -112,7 +112,6 @@ static inline u16 *reg16_push_pop(GB15RegFile *regfile, u8 reg) {
     }
 }
 
-
 static inline void add_core(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom, u8 value, u8 carry) {
     u16 overflow = (u16)regfile->a + (u16)value + (u16)carry;
     set_h(regfile, (((u16)regfile->a & (u16)0xF) + ((u16)value & (u16)0xF) + (u16)carry) > (u16)0xF);
@@ -333,6 +332,13 @@ static inline void set(GB15State *state, GB15RegFile *regfile, GB15MemMap *memma
         state->tclocks = 16;
         gb15_memmap_write(memmap, regfile->hl, gb15_memmap_read(memmap, rom, regfile->hl) | ((u8)value << bit));
     }
+}
+
+static inline void rst_core(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u16 dest) {
+    state->tclocks = 16;
+    regfile->sp -= 2;
+    write16(memmap, regfile->sp, regfile->pc);
+    regfile->pc = dest;
 }
 
 static inline void nop(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -694,10 +700,7 @@ static inline void add_u8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB1
 }
 
 static inline void rst(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    state->tclocks = 16;
-    regfile->sp -= 2;
-    write16(memmap, regfile->sp, regfile->pc);
-    regfile->pc = opcode & (u8)0b00111000;
+    rst_core(state, regfile, memmap, (u16)(opcode & (u8)0b00111000));
 }
 
 static inline void ret(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
@@ -769,7 +772,8 @@ static inline void sub_u8(u8 opcode, GB15State *state, GB15RegFile *regfile, GB1
 
 static inline void reti(u8 opcode, GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
     state->tclocks = 16;
-    state->ime = true;
+    state->ei_mclocks = 2;
+    memmap->io[GB15_IO_IE] = 0x01;
     regfile->pc = read16(memmap, rom, &regfile->sp);
 }
 
@@ -1020,33 +1024,72 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0xFE, "cp u8", cp_u8},                {0xFF, "rst $38", rst}
 };
 
+static inline bool handle_interrupt(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
+    if (memmap->io[GB15_IO_IE] == 0x00) {
+        return true;
+    }
+    u8 flags = memmap->io[GB15_IO_IF];
+    if (flags == 0x00) {
+        return true;
+    }
+    if (flags & 0b00001) { // vblank
+        rst_core(state, regfile, memmap, 0x0040);
+        memmap->io[GB15_IO_IF] ^= 0b00001;
+        return false;
+    }
+    if (flags & 0b00010) { // lcd stat
+        rst_core(state, regfile, memmap, 0x0048);
+        memmap->io[GB15_IO_IF] ^= 0b00010;
+        return false;
+    }
+    if (flags & 0b00100) { // timer
+        rst_core(state, regfile, memmap, 0x0050);
+        memmap->io[GB15_IO_IF] ^= 0b00100;
+        return false;
+    }
+    if (flags & 0b01000) { // serial
+        rst_core(state, regfile, memmap, 0x0058);
+        memmap->io[GB15_IO_IF] ^= 0b01000;
+        return false;
+    }
+    // joypad
+    rst_core(state, regfile, memmap, 0x0060);
+    memmap->io[GB15_IO_IF] ^= 0b10000;
+    return false;
+}
+
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
     if (state->tclocks == 0) {
+        if (state->regfile.pc == 0x0100) {
+            state = (void *)state;
+        }
         GB15MemMap *memmap = &state->memmap;
         GB15RegFile *regfile = &state->regfile;
-        u8 opcode = read8(memmap, rom, &regfile->pc);
-        const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-//        printf("pc=%.4x|sp=%.4x|af=%.4x|bc=%.4x|de=%.4x|hl=%.4x|%.4x :: %s\n",
-//               regfile->pc,
-//               regfile->sp,
-//               regfile->af,
-//               regfile->bc,
-//               regfile->de,
-//               regfile->hl,
-//               regfile->pc - 1,
-//               bundle->name);
-        bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
+        if (handle_interrupt(state, regfile, memmap, rom)) {
+            u8 opcode = read8(memmap, rom, &regfile->pc);
+            const InstructionBundle *bundle = INSTRUCTIONS + opcode;
+//            printf("pc=%.4x|sp=%.4x|af=%.4x|bc=%.4x|de=%.4x|hl=%.4x|%.4x :: %s\n",
+//                   regfile->pc,
+//                   regfile->sp,
+//                   regfile->af,
+//                   regfile->bc,
+//                   regfile->de,
+//                   regfile->hl,
+//                   regfile->pc - 1,
+//                   bundle->name);
+            bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
+        }
         // Enable / Disable interrupts
         if (state->di_mclocks) {
             state->di_mclocks--;
             if (state->di_mclocks == 0) {
-                state->ime = false;
+                memmap->io[GB15_IO_IE] = 0x00;
             }
         }
         if (state->ei_mclocks) {
             state->ei_mclocks--;
             if (state->ei_mclocks == 0) {
-                state->ime = true;
+                memmap->io[GB15_IO_IE] = 0x01;
             }
         }
     }
@@ -1056,6 +1099,5 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
 
 void gb15_boot(GB15State *state)
 {
-    state->ime = true;
     gb15_gpu_init(state);
 }

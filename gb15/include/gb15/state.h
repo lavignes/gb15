@@ -16,11 +16,6 @@ typedef struct GB15State {
     u8 tclocks;
 
     /**
-     * Interrupt Master Enable flag
-     */
-    bool ime;
-
-    /**
      * Interrupts Transitioning. DI or EI was just executed.
      * This is the number of instructions left before the interrupt state
      * will transition.
@@ -38,8 +33,12 @@ typedef struct GB15State {
      */
     bool halted;
 
+    /**
+     * GPU State
+     */
     u32 gpu_tclocks;
-    u32 screen[23040];
+    u32 lcd[23040];
+    u32 bg_tiles[23040];
 
 } GB15State;
 

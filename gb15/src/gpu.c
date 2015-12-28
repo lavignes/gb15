@@ -11,7 +11,7 @@ static inline s8 signify8(u8 value) {
 
 void gb15_gpu_init(GB15State *state)
 {
-    memset(state->screen, 0xFF, sizeof(u32) * 23040);
+    memset(state->lcd, 0xFF, sizeof(u32) * 23040);
 }
 
 static u8 bg_palette_for_data(u8 data, u8 bgp) {
@@ -21,9 +21,9 @@ static u8 bg_palette_for_data(u8 data, u8 bgp) {
         case 0b01:
             return (bgp & (u8)0x0C) >> (u8)2;
         case 0b10:
-            return (bgp & (u8)0x30 >> (u8)4);
+            return (bgp & (u8)0x30) >> (u8)4;
         case 0b11:
-            return (bgp & (u8)0xC0 >> (u8)6);
+            return (bgp & (u8)0xC0) >> (u8)6;
         default:
             break;
     }
@@ -68,26 +68,32 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             if (state->gpu_tclocks < 204) {
                 return;
             }
-            state->gpu_tclocks = 0;
             if (ly == 143) {
                 mode = 0x01;
                 vblank(state, userdata);
-                memmap->io[GB15_IO_IF] |= 0b1;
+                if (stat & 0b0010000) {
+                    memmap->io[GB15_IO_IF] |= 0b00001;
+                }
             } else {
                 mode = 0x02;
+                if (stat & 0b0001000) {
+                    memmap->io[GB15_IO_IF] |= 0b00010;
+                }
             }
             ly++;
+            state->gpu_tclocks = 0;
             break;
 
         case 0x01: // VBlank
             if (state->gpu_tclocks < 4560) {
                 return;
             }
-            state->gpu_tclocks = 0;
-            ly++;
             if (ly > 153) {
                 ly = 0;
                 mode = 0x2;
+            } else {
+                ly++;
+                state->gpu_tclocks = 0;
             }
             break;
 
@@ -114,12 +120,8 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
                     u8 scy = memmap->io[GB15_IO_SCY];
                     u8 bgp = memmap->io[GB15_IO_BGP];
                     for (u8 x = 0; x < 160; x++) {
-                        state->screen[ly * 160 + x] = bg_pixel_at(x, ly, memmap, lcdc, scx, scy, bgp);
+                        state->lcd[ly * 160 + x] = bg_pixel_at(x, ly, memmap, lcdc, scx, scy, bgp);
                     }
-                }
-            } else {
-                for (u8 x = 0; x < 160; x++) {
-                    state->screen[ly * 160 + x] = 0xFFFFFFFF;
                 }
             }
             break;
@@ -128,7 +130,9 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             break;
     }
     stat = (stat & ~(u8)0b11) | mode;
-    stat = (stat & ~(u8)0b100) | ((ly == memmap->io[GB15_IO_LYC]) << (u8)2);
+    if (stat & 0b01000000 && ly == memmap->io[GB15_IO_LYC]) {
+        memmap->io[GB15_IO_IF] |= 0b00010;
+    }
     memmap->io[GB15_IO_LY] = ly;
     memmap->io[GB15_IO_STAT] = stat;
 }
