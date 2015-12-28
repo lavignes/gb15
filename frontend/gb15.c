@@ -52,9 +52,17 @@ int main(int argc, char *argv[]) {
     GB15State *state = calloc(1, sizeof(GB15State));
     gb15_boot(state);
 
+    u32 cycles = 0;
+    u32 last_time = SDL_GetTicks();
     while (true) {
         gb15_tick(state, rom, vblank, &render_state);
         SDL_Event event;
+        cycles++;
+        if (SDL_GetTicks() - last_time >= 1000) {
+            printf("cps: %d\n", cycles);
+            cycles = 0;
+            last_time = SDL_GetTicks();
+        }
 //        SDL_PollEvent(&event);
         if (event.type == SDL_QUIT) {
             break;
