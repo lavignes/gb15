@@ -883,38 +883,38 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0x00, 0, "nop", nop},                    {0x01, 0, "ld bc, u16", ld_rr_u16},
         {0x02, 0, "ld (bc), a", ld_mem_rr_a},     {0x03, 0, "inc bc", inc_rr},
         {0x04, 0, "inc b", inc_r},                {0x05, 0, "dec b", dec_r},
-        {0x06, 1, "ld b, u8", ld_r_u8},           {0x07, 0, "rlca", rlca},
-        {0x08, 1, "ld (u8), sp", ld_mem_u16_sp},  {0x09, 0, "add hl, bc", add_hl_rr},
+        {0x06, 1, "ld b, %.2X", ld_r_u8},         {0x07, 0, "rlca", rlca},
+        {0x08, 1, "ld (%.2X), sp", ld_mem_u16_sp},{0x09, 0, "add hl, bc", add_hl_rr},
         {0x0A, 0, "ld a, (bc)", ld_a_mem_rr},     {0x0B, 0, "dec bc", dec_rr},
         {0x0C, 0, "inc c", inc_r},                {0x0D, 0, "dec c", dec_r},
-        {0x0E, 1, "ld c, u8", ld_r_u8},           {0x0F, 0, "rrc", rrc},
+        {0x0E, 1, "ld c, %.2X", ld_r_u8},         {0x0F, 0, "rrc", rrc},
 
         {0x10, 0, "stop", stop},                  {0x11, 0, "ld de, u16", ld_rr_u16},
         {0x12, 0, "ld (de), a", ld_mem_rr_a},     {0x13, 0, "inc de", inc_rr},
         {0x14, 0, "inc d", inc_r},                {0x15, 0, "dec d", dec_r},
-        {0x16, 1, "ld d, u8", ld_r_u8},           {0x17, 0, "rla", rla},
-        {0x18, 1, "jr s8", jr_s8},                {0x19, 0, "add hl, de", add_hl_rr},
+        {0x16, 1, "ld d, %.2X", ld_r_u8},         {0x17, 0, "rla", rla},
+        {0x18, 1, "jr %.2X", jr_s8},              {0x19, 0, "add hl, de", add_hl_rr},
         {0x1A, 0, "ld a, (de)", ld_a_mem_rr},     {0x1B, 0, "dec de", dec_rr},
         {0x1C, 0, "inc e", inc_r},                {0x1D, 0, "dec e", dec_r},
-        {0x1E, 1, "ld e, u8", ld_r_u8},           {0x1F, 0, "rra", rra},
+        {0x1E, 1, "ld e, %.2X", ld_r_u8},         {0x1F, 0, "rra", rra},
 
-        {0x20, 1, "jr nz, s8", jr_cond_s8},       {0x21, 2, "ld hl, u16", ld_rr_u16},
+        {0x20, 1, "jr nz, %.2X", jr_cond_s8},     {0x21, 2, "ld hl, %.4X", ld_rr_u16},
         {0x22, 0, "ld (hl+), a", ldi_hl_a},       {0x23, 0, "inc hl", inc_rr},
         {0x24, 0, "inc h", inc_r},                {0x25, 0, "dec h", dec_r},
-        {0x26, 1, "ld h, u8", ld_r_u8},           {0x27, 0, "daa", daa},
-        {0x28, 1, "jr z, s8", jr_cond_s8},        {0x29, 0, "add hl, hl", add_hl_rr},
+        {0x26, 1, "ld h, %.2X", ld_r_u8},         {0x27, 0, "daa", daa},
+        {0x28, 1, "jr z, %.2X", jr_cond_s8},      {0x29, 0, "add hl, hl", add_hl_rr},
         {0x2A, 0, "ld a, (hl+)", ldi_a_hl},       {0x2B, 0, "dec hl", dec_rr},
         {0x2C, 0, "inc l", inc_r},                {0x2D, 0, "dec l", dec_r},
-        {0x2E, 1, "ld l, u8", ld_r_u8},           {0x2F, 0, "cpl", cpl},
+        {0x2E, 1, "ld l, %.2X", ld_r_u8},         {0x2F, 0, "cpl", cpl},
 
-        {0x30, 1, "jr nc, s8", jr_cond_s8},       {0x31, 2, "ld sp, u16", ld_rr_u16},
+        {0x30, 1, "jr nc, %.2X", jr_cond_s8},     {0x31, 2, "ld sp, %.4X", ld_rr_u16},
         {0x32, 0, "ld (hl-), a", ldd_hl_a},       {0x33, 0, "inc sp", inc_rr},
         {0x34, 0, "inc (hl)", inc_mem_hl},        {0x35, 0, "dec (hl)", dec_mem_hl},
-        {0x36, 1, "ld (hl), u8", ld_mem_hl_n},    {0x37, 0, "scf", scf},
-        {0x38, 1, "jr c, s8", jr_cond_s8},        {0x39, 0, "add hl, sp", add_hl_rr},
+        {0x36, 1, "ld (hl), %.2X", ld_mem_hl_n},  {0x37, 0, "scf", scf},
+        {0x38, 1, "jr c, %.2X", jr_cond_s8},      {0x39, 0, "add hl, sp", add_hl_rr},
         {0x3A, 0, "ld a, (hl-)", ldd_a_hl},       {0x3B, 0, "dec sp", dec_rr},
         {0x3C, 0, "inc a", inc_r},                {0x3D, 0, "dec a", dec_r},
-        {0x3E, 1, "ld a, u8", ld_r_u8},           {0x3F, 0, "ccf", ccf},
+        {0x3E, 1, "ld a, %.2X", ld_r_u8},         {0x3F, 0, "ccf", ccf},
 
         {0x40, 0, "ld b, b", ld_r_r},             {0x41, 0, "ld b, c", ld_r_r},
         {0x42, 0, "ld b, d", ld_r_r},             {0x43, 0, "ld b, e", ld_r_r},
@@ -989,46 +989,43 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0xBE, 0, "cp (hl)", cp_mem_hl},          {0xBF, 0, "cp a", cp_r},
 
         {0xC0, 0, "ret nz", ret_cond},            {0xC1, 0, "pop bc", pop_rr},
-        {0xC2, 2, "jp nz, u16", jp_cond_u16},     {0xC3, 2, "jp u16", jp_u16},
-        {0xC4, 2, "call nz, u16", call_cond_u16}, {0xC5, 0, "push bc", push_rr},
-        {0xC6, 1, "add a, u8", add_u8},           {0xC7, 0, "rst $00", rst},
+        {0xC2, 2, "jp nz, %.4X", jp_cond_u16},    {0xC3, 2, "jp %.4X", jp_u16},
+        {0xC4, 2, "call nz, %.4X", call_cond_u16},{0xC5, 0, "push bc", push_rr},
+        {0xC6, 1, "add a, %.2X", add_u8},         {0xC7, 0, "rst 00", rst},
         {0xC8, 0, "ret z", ret_cond},             {0xC9, 0, "ret", ret},
-        {0xCA, 2, "jp z, u16", jp_cond_u16},      {0xCB, 0, "CB", cb},
-        {0xCC, 2, "call z, u16", call_cond_u16},  {0xCD, 2, "call u16", call_u16},
-        {0xCE, 1, "adc u8", adc_u8},              {0xCF, 0, "rst $08", rst},
+        {0xCA, 2, "jp z, %.4X", jp_cond_u16},     {0xCB, 0, "CB", cb},
+        {0xCC, 2, "call z, %.4X", call_cond_u16}, {0xCD, 2, "call %.4X", call_u16},
+        {0xCE, 1, "adc %.2X", adc_u8},            {0xCF, 0, "rst 08", rst},
 
         {0xD0, 0, "ret nc", ret_cond},            {0xD1, 0, "pop de", pop_rr},
-        {0xD2, 2, "jp nc, u16", jp_cond_u16},     {0xD3, 0, "invalid", nop},
-        {0xD4, 2, "call nc, u16", call_cond_u16}, {0xD5, 0, "push de", push_rr},
-        {0xD6, 1, "sub u8", sub_u8},              {0xD7, 0, "rst $10", rst},
+        {0xD2, 2, "jp nc, %.4X", jp_cond_u16},    {0xD3, 0, "invalid", nop},
+        {0xD4, 2, "call nc, %.4X", call_cond_u16},{0xD5, 0, "push de", push_rr},
+        {0xD6, 1, "sub %.2X", sub_u8},            {0xD7, 0, "rst 10", rst},
         {0xD8, 0, "ret c", ret_cond},             {0xD9, 0, "reti", reti},
-        {0xDA, 2, "jp c, u16", jp_cond_u16},      {0xDB, 0, "invalid", nop},
-        {0xDC, 2, "call c, u16", call_cond_u16},  {0xDD, 0, "invalid", nop},
-        {0xDE, 1, "sbc u8", sbc_u8},              {0xDF, 0, "rst $18", nop},
+        {0xDA, 2, "jp c, %.4X", jp_cond_u16},     {0xDB, 0, "invalid", nop},
+        {0xDC, 2, "call c, %.4X", call_cond_u16}, {0xDD, 0, "invalid", nop},
+        {0xDE, 1, "sbc %.2X", sbc_u8},            {0xDF, 0, "rst 18", nop},
 
-        {0xE0, 1, "ldh (u8), a", ldh_mem_u8_a},   {0xE1, 0, "pop hl", pop_rr},
+        {0xE0, 1, "ldh (%.2X), a", ldh_mem_u8_a}, {0xE1, 0, "pop hl", pop_rr},
         {0xE2, 0, "ldh (c), a", ldh_mem_c_a},     {0xE3, 0, "invalid", nop},
         {0xE4, 0, "invalid", nop},                {0xE5, 0, "push hl", push_rr},
-        {0xE6, 1, "and u8", and_u8},              {0xE7, 0, "rst $20", rst},
-        {0xE8, 1, "add sp, u8", add_sp_u8},       {0xE9, 0, "jp hl", jp_hl},
-        {0xEA, 2, "ld (u16), a", ld_mm_u16_a},    {0xEB, 0, "invalid", nop},
+        {0xE6, 1, "and %.2X", and_u8},            {0xE7, 0, "rst 20", rst},
+        {0xE8, 1, "add sp, %.2X", add_sp_u8},     {0xE9, 0, "jp hl", jp_hl},
+        {0xEA, 2, "ld (%.4X), a", ld_mm_u16_a},   {0xEB, 0, "invalid", nop},
         {0xEC, 0, "invalid", nop},                {0xED, 0, "invalid", nop},
-        {0xEE, 1, "xor u8", xor_u8},              {0xEF, 0, "rst $28", rst},
+        {0xEE, 1, "xor %.2X", xor_u8},            {0xEF, 0, "rst 28", rst},
 
-        {0xF0, 1, "ldh a, (u8)", ldh_a_mem_u8},   {0xF1, 0, "pop af", pop_rr},
+        {0xF0, 1, "ldh a, (%.2X)", ldh_a_mem_u8}, {0xF1, 0, "pop af", pop_rr},
         {0xF2, 0, "ldh a, (c)", ldh_a_mem_c},     {0xF3, 0, "di", di},
         {0xF4, 0, "invalid", nop},                {0xF5, 0, "push af", push_rr},
-        {0xF6, 1, "or u8", or_u8},                {0xF7, 0, "rst $30", rst},
-        {0xF8, 1, "ld hl, sp+u8", ld_hl_sp_u8},   {0xF9, 0, "ld sp, hl", ld_sp_hl},
-        {0xFA, 2, "ld a, (u16)", ld_a_mem_u16},   {0xFB, 0, "ei", ei},
+        {0xF6, 1, "or %.2X", or_u8},              {0xF7, 0, "rst 30", rst},
+        {0xF8, 1, "ld hl, sp+%.2X", ld_hl_sp_u8}, {0xF9, 0, "ld sp, hl", ld_sp_hl},
+        {0xFA, 2, "ld a, (%.4X)", ld_a_mem_u16},  {0xFB, 0, "ei", ei},
         {0xFC, 0, "invalid", nop},                {0xFD, 0, "invalid", nop},
-        {0xFE, 1, "cp u8", cp_u8},                {0xFF, 0, "rst $38", rst}
+        {0xFE, 1, "cp %.2X", cp_u8},              {0xFF, 0, "rst 38", rst}
 };
 
 static inline bool handle_interrupt(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
-    if (memmap->io[GB15_IO_IE] == 0x00) {
-        return true;
-    }
     u8 flags = memmap->io[GB15_IO_IF];
     if (flags == 0x00) {
         return true;
@@ -1064,46 +1061,50 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
         if (state->regfile.pc == 0x0100) {
             state = (void *)state;
         }
+        if (state->regfile.pc == 0x0204) {
+            state = (void *)state;
+        }
         GB15MemMap *memmap = &state->memmap;
         GB15RegFile *regfile = &state->regfile;
         if (handle_interrupt(state, regfile, memmap, rom)) {
             u8 opcode = read8(memmap, rom, &regfile->pc);
             const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: %s",
-                   regfile->af,
-                   regfile->bc,
-                   regfile->de,
-                   regfile->hl,
-                   regfile->pc - 1,
-                   regfile->sp,
-                   bundle->name
-            );
-            u16 tmp_pc = regfile->pc;
-            if (bundle->num_operands == 1) {
-                printf(" => %.2X", read8(memmap, rom, &tmp_pc));
-            } else if (bundle->num_operands == 2) {
-                printf(" => %.4X", read16(memmap, rom, &tmp_pc));
-            }
-            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
-                   memmap->io[GB15_IO_LCDC],
-                   memmap->io[GB15_IO_STAT],
-                   memmap->io[GB15_IO_LY],
-                   memmap->io[GB15_IO_IE],
-                   memmap->io[GB15_IO_IF]
-            );
+//            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
+//                   regfile->af,
+//                   regfile->bc,
+//                   regfile->de,
+//                   regfile->hl,
+//                   regfile->pc - 1,
+//                   regfile->sp
+//            );
+//            u16 tmp_pc = regfile->pc;
+//            if (bundle->num_operands == 1) {
+//                printf(bundle->name, read8(memmap, rom, &tmp_pc));
+//            } else if (bundle->num_operands == 2) {
+//                printf(bundle->name, read16(memmap, rom, &tmp_pc));
+//            } else {
+//                printf(bundle->name);
+//            }
+//            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
+//                   memmap->io[GB15_IO_LCDC],
+//                   memmap->io[GB15_IO_STAT],
+//                   memmap->io[GB15_IO_LY],
+//                   memmap->io[GB15_IO_IE],
+//                   memmap->io[GB15_IO_IF]
+//            );
             bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
         }
         // Enable / Disable interrupts
         if (state->di_mclocks) {
             state->di_mclocks--;
             if (state->di_mclocks == 0) {
-                memmap->io[GB15_IO_IE] = 0x00;
+                state->memmap.ime = false;
             }
         }
         if (state->ei_mclocks) {
             state->ei_mclocks--;
             if (state->ei_mclocks == 0) {
-                memmap->io[GB15_IO_IE] = 0x01;
+                state->memmap.ime = false;
             }
         }
     }
@@ -1114,4 +1115,47 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
 void gb15_boot(GB15State *state)
 {
     gb15_gpu_init(state);
+//    state->memmap.ime = true;
+//    GB15MemMap *memmap = &state->memmap;
+//    GB15RegFile *regfile = &state->regfile;
+//    regfile->af = 0x01B0;
+//    regfile->bc = 0x0013;
+//    regfile->de = 0x00D8;
+//    regfile->hl = 0x104D;
+//    regfile->sp = 0xFFFE;
+//    regfile->pc = 0x0100;
+//
+//    memmap->io[GB15_IO_BIOS] = 0x01;
+//    memmap->io[GB15_IO_STAT] = 0x85;
+//    memmap->io[GB15_IO_TIMA] = 0x00;
+//    memmap->io[GB15_IO_TMA] = 0x00;
+//    memmap->io[GB15_IO_TAC] = 0x00;
+//    memmap->io[GB15_IO_NR10] = 0x80;
+//    memmap->io[GB15_IO_NR11] = 0xBF;
+//    memmap->io[GB15_IO_NR12] = 0xF3;
+//    memmap->io[GB15_IO_NR14] = 0xBF;
+//    memmap->io[GB15_IO_NR21] = 0x3F;
+//    memmap->io[GB15_IO_NR22] = 0x00;
+//    memmap->io[GB15_IO_NR24] = 0xBF;
+//    memmap->io[GB15_IO_NR30] = 0x7F;
+//    memmap->io[GB15_IO_NR31] = 0xFF;
+//    memmap->io[GB15_IO_NR33] = 0xBF;
+//    memmap->io[GB15_IO_NR41] = 0xFF;
+//    memmap->io[GB15_IO_NR42] = 0x00;
+//    memmap->io[GB15_IO_NR43] = 0x00;
+//    memmap->io[GB15_IO_NR30] = 0xBF;
+//    memmap->io[GB15_IO_NR50] = 0x77;
+//    memmap->io[GB15_IO_NR51] = 0xF3;
+//    memmap->io[GB15_IO_NR52] = 0xF1;
+//    memmap->io[GB15_IO_LCDC] = 0x91;
+//    memmap->io[GB15_IO_SCY] = 0x00;
+//    memmap->io[GB15_IO_SCX] = 0x00;
+//    memmap->io[GB15_IO_LYC] = 0x00;
+//    memmap->io[GB15_IO_BGP] = 0xFC;
+//    memmap->io[GB15_IO_OBP0] = 0xFF;
+//    memmap->io[GB15_IO_OBP1] = 0xFF;
+//    memmap->io[GB15_IO_WX] = 0x00;
+//    memmap->io[GB15_IO_WY] = 0x00;
+//    memmap->io[GB15_IO_IE] = 0x00;
+//    memmap->io[GB15_IO_IF] = 0x01;
 }

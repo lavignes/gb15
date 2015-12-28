@@ -11,7 +11,7 @@ static inline s8 signify8(u8 value) {
 
 void gb15_gpu_init(GB15State *state)
 {
-//    memset(state->lcd, 0xFF, sizeof(u32) * 23040);
+    memset(state->lcd, 0xFF, sizeof(u32) * 23040);
 }
 
 static u8 bg_palette_for_data(u8 data, u8 bgp) {
@@ -62,6 +62,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
     u8 mode = stat & (u8)0x03;
     u8 ly = memmap->io[GB15_IO_LY];
     u8 lcdc = memmap->io[GB15_IO_LCDC];
+    u8 ie = memmap->io[GB15_IO_IE];
     switch (mode) {
         case 0x00: // HBlank
             if (state->gpu_tclocks < 204) {
@@ -70,14 +71,12 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             if (ly == 143) {
                 mode = 0x01;
                 vblank(state, userdata);
-                if (stat & 0x10) {
-                    memmap->io[GB15_IO_IF] |= 0x01;
+                // Raise vblank
+                if (memmap->ime && ie & 0x01) {
+                    memmap->io[GB15_IO_IF] |= 0x01; //  vblank
                 }
             } else {
                 mode = 0x02;
-                if (stat & 0x08) {
-                    memmap->io[GB15_IO_IF] |= 0x02;
-                }
             }
             ly++;
             state->gpu_tclocks = 0;
@@ -128,10 +127,38 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
         default:
             break;
     }
-    stat = (stat & ~(u8)0x03) | mode;
-    if (stat & 0x40 && ly == memmap->io[GB15_IO_LYC]) {
-        memmap->io[GB15_IO_IF] |= 0x02;
+    bool coincidence = (ly == memmap->io[GB15_IO_LYC]);
+    // STAT interrupts
+    if (memmap->ime && ie & 0x02) {
+        // Raise LY==LYC coincidence
+        if (coincidence && (stat & 0x04)) {
+            memmap->io[GB15_IO_IF] |= 0x02;
+        }
+        // Raise mode change TODO: This could me made shorter
+        if ((stat & (u8)0x03) != mode) {
+            switch (mode) {
+                case 0x00:
+                    if (stat & 0x08) {
+                        memmap->io[GB15_IO_IF] |= 0x02;
+                    }
+                    break;
+                case 0x01:
+                    if (stat & 0x10) {
+                        memmap->io[GB15_IO_IF] |= 0x02;
+                    }
+                    break;
+                case 0x02:
+                    if (stat & 0x20) {
+                        memmap->io[GB15_IO_IF] |= 0x02;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
     }
+    stat = (stat & ~(u8)0x04) | coincidence;
+    stat = (stat & ~(u8)0x03) | mode;
     memmap->io[GB15_IO_LY] = ly;
     memmap->io[GB15_IO_STAT] = stat;
     state->gpu_tclocks++;

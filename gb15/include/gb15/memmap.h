@@ -40,6 +40,11 @@ typedef struct GB15MemMap {
     u8 hram[128];
 
     /**
+     * Interrupt Master Enable
+     */
+    bool ime;
+
+    /**
      * MBC Version
      */
     u8 mbc_version;
