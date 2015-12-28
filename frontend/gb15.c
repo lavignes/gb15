@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     render_state.renderer = renderer;
     render_state.texture = texture;
 
-    FILE *file = fopen("opus5.gb", "rb");
+    FILE *file = fopen("tetris.gb", "rb");
     fseek(file, 0, SEEK_END);
     uz size = (uz)ftell(file);
     rewind(file);

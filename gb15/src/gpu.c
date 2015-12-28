@@ -72,8 +72,8 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
                 mode = 0x01;
                 vblank(state, userdata);
                 // Raise vblank
-                if (memmap->ime && ie & 0x01) {
-                    memmap->io[GB15_IO_IF] |= 0x01; //  vblank
+                if (memmap->ime && (ie & (u8)0x01)) {
+                    memmap->io[GB15_IO_IF] |= (u8)0x01; //  vblank
                 }
             } else {
                 mode = 0x02;
@@ -129,35 +129,34 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
     }
     bool coincidence = (ly == memmap->io[GB15_IO_LYC]);
     // STAT interrupts
-    if (memmap->ime && ie & 0x02) {
+    if (memmap->ime && (ie & (u8)0x02)) {
         // Raise LY==LYC coincidence
-        if (coincidence && (stat & 0x04)) {
-            memmap->io[GB15_IO_IF] |= 0x02;
+        if (coincidence && (stat & (u8)0x04)) {
+            memmap->io[GB15_IO_IF] |= (u8)0x02;
         }
         // Raise mode change TODO: This could me made shorter
         if ((stat & (u8)0x03) != mode) {
             switch (mode) {
+                default:
                 case 0x00:
-                    if (stat & 0x08) {
-                        memmap->io[GB15_IO_IF] |= 0x02;
+                    if (stat & (u8)0x08) {
+                        memmap->io[GB15_IO_IF] |= (u8)0x02;
                     }
                     break;
                 case 0x01:
-                    if (stat & 0x10) {
-                        memmap->io[GB15_IO_IF] |= 0x02;
+                    if (stat & (u8)0x10) {
+                        memmap->io[GB15_IO_IF] |= (u8)0x02;
                     }
                     break;
                 case 0x02:
-                    if (stat & 0x20) {
-                        memmap->io[GB15_IO_IF] |= 0x02;
+                    if (stat & (u8)0x20) {
+                        memmap->io[GB15_IO_IF] |= (u8)0x02;
                     }
-                    break;
-                default:
                     break;
             }
         }
     }
-    stat = (stat & ~(u8)0x04) | coincidence;
+    stat = (stat & ~(u8)0x04) | (coincidence << 6);
     stat = (stat & ~(u8)0x03) | mode;
     memmap->io[GB15_IO_LY] = ly;
     memmap->io[GB15_IO_STAT] = stat;
