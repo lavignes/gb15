@@ -889,7 +889,7 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0x0C, 0, "inc c", inc_r},                {0x0D, 0, "dec c", dec_r},
         {0x0E, 1, "ld c, %.2X", ld_r_u8},         {0x0F, 0, "rrc", rrc},
 
-        {0x10, 0, "stop", stop},                  {0x11, 0, "ld de, u16", ld_rr_u16},
+        {0x10, 1, "stop %.2X", stop},             {0x11, 0, "ld de, u16", ld_rr_u16},
         {0x12, 0, "ld (de), a", ld_mem_rr_a},     {0x13, 0, "inc de", inc_rr},
         {0x14, 0, "inc d", inc_r},                {0x15, 0, "dec d", dec_r},
         {0x16, 1, "ld d, %.2X", ld_r_u8},         {0x17, 0, "rla", rla},
@@ -1029,34 +1029,41 @@ static inline bool handle_interrupt(GB15State *state, GB15RegFile *regfile, GB15
     if (!memmap->ime) {
         return true;
     }
-    u8 flags = memmap->io[GB15_IO_IF];
-    if (flags == 0x00) {
+    u8 ints = memmap->io[GB15_IO_IF] & memmap->io[GB15_IO_IE];
+    if (ints == 0x00) {
         return true;
     }
-    if (flags & 0x01) { // vblank
+    if (ints & 0x01) { // vblank
         rst_core(state, regfile, memmap, 0x0040);
         memmap->io[GB15_IO_IF] ^= 0x01;
+        memmap->ime = false;
         return false;
     }
-    if (flags & 0x02) { // lcd stat
+    if (ints & 0x02) { // lcd stat
         rst_core(state, regfile, memmap, 0x0048);
         memmap->io[GB15_IO_IF] ^= 0x02;
+        memmap->ime = false;
         return false;
     }
-    if (flags & 0x04) { // timer
+    if (ints & 0x04) { // timer
         rst_core(state, regfile, memmap, 0x0050);
         memmap->io[GB15_IO_IF] ^= 0x04;
+        memmap->ime = false;
         return false;
     }
-    if (flags & 0x08) { // serial
+    if (ints & 0x08) { // serial
         rst_core(state, regfile, memmap, 0x0058);
         memmap->io[GB15_IO_IF] ^= 0x08;
+        memmap->ime = false;
         return false;
     }
-    // joypad
-    rst_core(state, regfile, memmap, 0x0060);
-    memmap->io[GB15_IO_IF] ^= 0x10;
-    return false;
+    if (ints & 0x10) { // joypad
+        rst_core(state, regfile, memmap, 0x0060);
+        memmap->io[GB15_IO_IF] ^= 0x10;
+        memmap->ime = false;
+        return false;
+    }
+    return true;
 }
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
@@ -1064,37 +1071,34 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
         if (state->regfile.pc == 0x0100) {
             state = (void *)state;
         }
-        if (state->regfile.pc == 0x0064) {
-            state = (void *)state;
-        }
         GB15MemMap *memmap = &state->memmap;
         GB15RegFile *regfile = &state->regfile;
         if (handle_interrupt(state, regfile, memmap, rom)) {
             u8 opcode = read8(memmap, rom, &regfile->pc);
             const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
-                   regfile->af,
-                   regfile->bc,
-                   regfile->de,
-                   regfile->hl,
-                   regfile->pc - 1,
-                   regfile->sp
-            );
-            u16 tmp_pc = regfile->pc;
-            if (bundle->num_operands == 1) {
-                printf(bundle->name, read8(memmap, rom, &tmp_pc));
-            } else if (bundle->num_operands == 2) {
-                printf(bundle->name, read16(memmap, rom, &tmp_pc));
-            } else {
-                printf(bundle->name);
-            }
-            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
-                   memmap->io[GB15_IO_LCDC],
-                   memmap->io[GB15_IO_STAT],
-                   memmap->io[GB15_IO_LY],
-                   memmap->io[GB15_IO_IE],
-                   memmap->io[GB15_IO_IF]
-            );
+//            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
+//                   regfile->af,
+//                   regfile->bc,
+//                   regfile->de,
+//                   regfile->hl,
+//                   regfile->pc - 1,
+//                   regfile->sp
+//            );
+//            u16 tmp_pc = regfile->pc;
+//            if (bundle->num_operands == 1) {
+//                printf(bundle->name, read8(memmap, rom, &tmp_pc));
+//            } else if (bundle->num_operands == 2) {
+//                printf(bundle->name, read16(memmap, rom, &tmp_pc));
+//            } else {
+//                printf(bundle->name);
+//            }
+//            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
+//                   memmap->io[GB15_IO_LCDC],
+//                   memmap->io[GB15_IO_STAT],
+//                   memmap->io[GB15_IO_LY],
+//                   memmap->io[GB15_IO_IE],
+//                   memmap->io[GB15_IO_IF]
+//            );
             bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
         }
         // Enable / Disable interrupts
@@ -1118,4 +1122,5 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
 void gb15_boot(GB15State *state)
 {
     gb15_gpu_init(state);
+    state->memmap.ime  = true;
 }

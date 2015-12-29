@@ -56,7 +56,7 @@ typedef enum GB15IOPort {
     /**
      * Port/Mode Registers
      */
-    GB15_IO_P1 =    0x00,
+    GB15_IO_JOYP =  0x00,
     GB15_IO_SB =    0x01,
     GB15_IO_SC =    0x02,
     GB15_IO_DIV =   0x03,
