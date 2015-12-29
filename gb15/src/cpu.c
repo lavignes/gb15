@@ -1108,54 +1108,11 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
             }
         }
     }
-    gb15_gpu_tick(state, rom, vblank, userdata);
+    gb15_lcd_tick(state, rom, vblank, userdata);
     state->tclocks--;
 }
 
 void gb15_boot(GB15State *state)
 {
     gb15_gpu_init(state);
-//    state->memmap.ime = true;
-//    GB15MemMap *memmap = &state->memmap;
-//    GB15RegFile *regfile = &state->regfile;
-//    regfile->af = 0x01B0;
-//    regfile->bc = 0x0013;
-//    regfile->de = 0x00D8;
-//    regfile->hl = 0x104D;
-//    regfile->sp = 0xFFFE;
-//    regfile->pc = 0x0100;
-//
-//    memmap->io[GB15_IO_BIOS] = 0x01;
-//    memmap->io[GB15_IO_STAT] = 0x85;
-//    memmap->io[GB15_IO_TIMA] = 0x00;
-//    memmap->io[GB15_IO_TMA] = 0x00;
-//    memmap->io[GB15_IO_TAC] = 0x00;
-//    memmap->io[GB15_IO_NR10] = 0x80;
-//    memmap->io[GB15_IO_NR11] = 0xBF;
-//    memmap->io[GB15_IO_NR12] = 0xF3;
-//    memmap->io[GB15_IO_NR14] = 0xBF;
-//    memmap->io[GB15_IO_NR21] = 0x3F;
-//    memmap->io[GB15_IO_NR22] = 0x00;
-//    memmap->io[GB15_IO_NR24] = 0xBF;
-//    memmap->io[GB15_IO_NR30] = 0x7F;
-//    memmap->io[GB15_IO_NR31] = 0xFF;
-//    memmap->io[GB15_IO_NR33] = 0xBF;
-//    memmap->io[GB15_IO_NR41] = 0xFF;
-//    memmap->io[GB15_IO_NR42] = 0x00;
-//    memmap->io[GB15_IO_NR43] = 0x00;
-//    memmap->io[GB15_IO_NR30] = 0xBF;
-//    memmap->io[GB15_IO_NR50] = 0x77;
-//    memmap->io[GB15_IO_NR51] = 0xF3;
-//    memmap->io[GB15_IO_NR52] = 0xF1;
-//    memmap->io[GB15_IO_LCDC] = 0x91;
-//    memmap->io[GB15_IO_SCY] = 0x00;
-//    memmap->io[GB15_IO_SCX] = 0x00;
-//    memmap->io[GB15_IO_LYC] = 0x00;
-//    memmap->io[GB15_IO_BGP] = 0xFC;
-//    memmap->io[GB15_IO_OBP0] = 0xFF;
-//    memmap->io[GB15_IO_OBP1] = 0xFF;
-//    memmap->io[GB15_IO_WX] = 0x00;
-//    memmap->io[GB15_IO_WY] = 0x00;
-//    memmap->io[GB15_IO_IE] = 0x00;
-//    memmap->io[GB15_IO_IF] = 0x01;
 }

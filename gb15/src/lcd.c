@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include <gb15/gpu.h>
+#include <gb15/lcd.h>
 
 static inline s8 signify8(u8 value) {
     if (value <= (u8)0x7F) {
@@ -56,7 +56,7 @@ static u32 bg_pixel_at(u8 x, u8 y, GB15MemMap *memmap, u8 lcdc, u8 scx, u8 scy, 
     return 0xFF0000FF;
 }
 
-void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
+void gb15_lcd_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
     GB15MemMap *memmap = &state->memmap;
     u8 stat = memmap->io[GB15_IO_STAT];
     u8 mode = stat & (u8)0x03;

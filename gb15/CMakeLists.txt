@@ -5,7 +5,7 @@ set(SOURCES
         ${SOURCE_DIR}/memmap.c
         ${SOURCE_DIR}/cpu.c
         ${SOURCE_DIR}/bios.c
-        ${SOURCE_DIR}/gpu.c
+        ${SOURCE_DIR}/lcd.c
 )
 
 set(HEADERS
@@ -17,7 +17,7 @@ set(HEADERS
         ${HEADER_DIR}/register.h
         ${HEADER_DIR}/memmap.h
         ${HEADER_DIR}/bios.h
-        ${HEADER_DIR}/gpu.h
+        ${HEADER_DIR}/lcd.h
 )
 
 add_library(libgb15  ${SOURCES} ${HEADERS})
