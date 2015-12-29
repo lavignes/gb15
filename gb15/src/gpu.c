@@ -31,7 +31,7 @@ static u8 bg_palette_for_data(u8 data, u8 bgp) {
     return 0;
 }
 
-static u32 bg_pixel_at(u8 x, u8 y, GB15Mmu *mmu, u8 lcdc, u8 scx, u8 scy, u8 bgp) {
+static u32 bg_pixel_at(GB15Mmu *mmu, u8 x, u8 y, u8 lcdc, u8 scx, u8 scy, u8 bgp) {
     u16 bg_tile_map_table = (lcdc & 0x08)? (u16)0x9C00 : (u16)0x9800;
     u8 tile_x = (x + scx) >> (u8)3; // / 8;
     u8 tile_y = (y + scy) >> (u8)3; // / 8
@@ -54,114 +54,72 @@ static u32 bg_pixel_at(u8 x, u8 y, GB15Mmu *mmu, u8 lcdc, u8 scx, u8 scy, u8 bgp
         default:
             break;
     }
-    return 0xFF0000FF;
+    return 0x000000FF;
 }
 
 void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
-    GB15Cpu *cpu = &state->cpu;
     GB15Gpu *gpu = &state->gpu;
     GB15Mmu *mmu = &state->mmu;
-    u8 stat = mmu->io[GB15_IO_STAT];
-    u8 mode = stat & (u8)0x03;
-    u8 ly = mmu->io[GB15_IO_LY];
     u8 lcdc = mmu->io[GB15_IO_LCDC];
-    u8 ie = mmu->io[GB15_IO_IE];
-    switch (mode) {
-        case 0x00: // HBlank
-            if (gpu->tclocks < 204) {
-                break;
-            }
-            if (ly == 143) {
-                mode = 0x01;
-                vblank(state, userdata);
-                // Raise vblank
-                if (cpu->ime && (ie & (u8)0x01)) {
-                    mmu->io[GB15_IO_IF] |= (u8)0x01; //  vblank
-                }
-            } else {
-                mode = 0x02;
-            }
-            ly++;
-            gpu->tclocks = 0;
-            break;
-
-        case 0x01: // VBlank
-            if (gpu->tclocks < 4560) {
-                break;
-            }
-            if (ly > 153) {
-                ly = 0;
-                mode = 0x2;
-            } else {
-                ly++;
-                gpu->tclocks = 0;
-            }
-            break;
-
-        case 0x02: // OAM
-            if (gpu->tclocks < 80) {
-                break;
-            }
-            gpu->tclocks = 0;
-            mode = 0x03;
-            break;
-
-        case 0x03: // LCD
-            if (gpu->tclocks < 172) {
-                break;
-            }
-            gpu->tclocks = 0;
-            mode = 0x00;
-            if (ly > 143) {
-                break;
-            }
-            if (lcdc & 0x80) {
-                if (lcdc & 0x01) {
-                    u8 scx = mmu->io[GB15_IO_SCX];
-                    u8 scy = mmu->io[GB15_IO_SCY];
-                    u8 bgp = mmu->io[GB15_IO_BGP];
-                    for (u8 x = 0; x < 160; x++) {
-                        gpu->lcd[ly * 160 + x] = bg_pixel_at(x, ly, mmu, lcdc, scx, scy, bgp);
-                    }
-                }
-            }
-            break;
-
-        default:
-            break;
+    if ((lcdc & (u8)0x80) == (u8)0x00) {
+        mmu->io[GB15_IO_LY] = 0x00;
+        mmu->io[GB15_IO_STAT] &= ~(u8)0x03;
+        gpu->clocks = 456;
+        return;
     }
-    bool coincidence = (ly == mmu->io[GB15_IO_LYC]);
-    // STAT interrupts
-    if (cpu->ime && (ie & (u8)0x02)) {
-        // Raise LY==LYC coincidence
-        if (coincidence && (stat & (u8)0x04)) {
+    u8 stat = mmu->io[GB15_IO_STAT];
+    u8 ly = mmu->io[GB15_IO_LY];
+    u8 mode = stat & (u8)0x03;
+    if (ly >= 144) {
+        mode = 0x01;
+        gpu->stat_raised = false;
+    } else if (gpu->clocks >= 456 - 80) {
+        mode = 0x02;
+        gpu->stat_raised = false;
+    } else if (gpu->clocks >= 456 - 80 - 172) {
+        mode = 0x03;
+        gpu->stat_raised = false;
+    } else {
+        mode = 0x00;
+        if (!gpu->stat_raised && (stat & (u8)0x08)) {
+            mmu->io[GB15_IO_IF] |= (u8)0x02; // stat
+            gpu->stat_raised = true;
+        }
+    }
+    gpu->clocks--;
+    if (gpu->clocks == 0) {
+        gpu->clocks = 456;
+        ly++;
+        if (ly == 144) {
+            if (!gpu->vblank_raised) {
+                mmu->io[GB15_IO_IF] |= (u8)0x01; // vblank
+                if (stat & (u8)0x10) {
+                    mmu->io[GB15_IO_IF] |= (u8)0x02; // stat
+                }
+                gpu->vblank_raised = true;
+            }
+            vblank(state, userdata);
+        } else if (ly > 153) {
+            gpu->vblank_raised = false;
+            ly = 0;
+        }
+        bool coincidence = (ly == mmu->io[GB15_IO_LYC]);
+        if (coincidence && (stat & (u8)0x40)) {
+            stat |= (u8)0x04;
             mmu->io[GB15_IO_IF] |= (u8)0x02;
         }
-        // Raise mode change TODO: This could me made shorter
-        if ((stat & (u8)0x03) != mode) {
-            switch (mode) {
-                default:
-                case 0x00:
-                    if (stat & (u8)0x08) {
-                        mmu->io[GB15_IO_IF] |= (u8)0x02;
-                    }
-                    break;
-                case 0x01:
-                    if (stat & (u8)0x10) {
-                        mmu->io[GB15_IO_IF] |= (u8)0x02;
-                    }
-                    break;
-                case 0x02:
-                    if (stat & (u8)0x20) {
-                        mmu->io[GB15_IO_IF] |= (u8)0x02;
-                    }
-                    break;
+        if (ly < 144) {
+            if (lcdc & 0x01) {
+                u8 scx = mmu->io[GB15_IO_SCX];
+                u8 scy = mmu->io[GB15_IO_SCY];
+                u8 bgp = mmu->io[GB15_IO_BGP];
+                for (u8 x = 0; x < 160; x++) {
+                    gpu->lcd[ly * 160 + x] = bg_pixel_at(mmu, x, ly, lcdc, scx, scy, bgp);
+                }
             }
         }
     }
-    stat = (stat & ~(u8)0x04) | (coincidence << 6);
     stat = (stat & ~(u8)0x03) | mode;
     mmu->io[GB15_IO_LY] = ly;
     mmu->io[GB15_IO_STAT] = stat;
-    gpu->tclocks++;
 }

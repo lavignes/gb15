@@ -1072,10 +1072,9 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
     GB15Mmu *mmu = &state->mmu;
     GB15Cpu *cpu = &state->cpu;
     if (cpu->tclocks == 0) {
-        if (cpu->pc == 0x0100) {
+        if (cpu->pc == 0x005D) {
             cpu = (void *)cpu;
         }
-
         if (handle_interrupt(cpu, mmu, rom)) {
             u8 opcode = read8(mmu, rom, &cpu->pc);
             const InstructionBundle *bundle = INSTRUCTIONS + opcode;
