@@ -799,7 +799,7 @@ static inline void and_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     and_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
 }
 
-static inline void add_sp_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline void add_sp_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->tclocks = 16;
     s32 overflow = (s32)cpu->sp + (u32)signify8(read8(mmu, rom, &cpu->pc));
     set_c(cpu, overflow > (s32)0xFFFF);
@@ -844,7 +844,7 @@ static inline void or_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     or_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
 }
 
-static inline void ld_hl_sp_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline void ld_hl_sp_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->tclocks = 12;
     s32 overflow = (s32)cpu->sp + (u32)signify8(read8(mmu, rom, &cpu->pc));
     set_c(cpu, overflow > (s32)0xFFFF);
@@ -1012,7 +1012,7 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0xE2, 0, "ldh (c), a", ldh_mem_c_a},     {0xE3, 0, "invalid", nop},
         {0xE4, 0, "invalid", nop},                {0xE5, 0, "push hl", push_rr},
         {0xE6, 1, "and %.2X", and_u8},            {0xE7, 0, "rst 20", rst},
-        {0xE8, 1, "add sp, %.2X", add_sp_u8},     {0xE9, 0, "jp hl", jp_hl},
+        {0xE8, 1, "add sp, %.2X", add_sp_s8},     {0xE9, 0, "jp hl", jp_hl},
         {0xEA, 2, "ld (%.4X), a", ld_mm_u16_a},   {0xEB, 0, "invalid", nop},
         {0xEC, 0, "invalid", nop},                {0xED, 0, "invalid", nop},
         {0xEE, 1, "xor %.2X", xor_u8},            {0xEF, 0, "rst 28", rst},
@@ -1021,7 +1021,7 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0xF2, 0, "ldh a, (c)", ldh_a_mem_c},     {0xF3, 0, "di", di},
         {0xF4, 0, "invalid", nop},                {0xF5, 0, "push af", push_rr},
         {0xF6, 1, "or %.2X", or_u8},              {0xF7, 0, "rst 30", rst},
-        {0xF8, 1, "ld hl, sp+%.2X", ld_hl_sp_u8}, {0xF9, 0, "ld sp, hl", ld_sp_hl},
+        {0xF8, 1, "ld hl, sp+%.2X", ld_hl_sp_s8}, {0xF9, 0, "ld sp, hl", ld_sp_hl},
         {0xFA, 2, "ld a, (%.4X)", ld_a_mem_u16},  {0xFB, 0, "ei", ei},
         {0xFC, 0, "invalid", nop},                {0xFD, 0, "invalid", nop},
         {0xFE, 1, "cp %.2X", cp_u8},              {0xFF, 0, "rst 38", rst}
@@ -1125,4 +1125,7 @@ void gb15_boot(GB15State *state)
 {
     gb15_gpu_init(state);
     state->cpu.ime  = true;
+    GB15Mmu *mmu = &state->mmu;
+    mmu->io[GB15_IO_STAT] = 0x84;
+    mmu->io[GB15_IO_IF] = 0xE1;
 }

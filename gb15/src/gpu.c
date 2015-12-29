@@ -69,7 +69,7 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
     }
     u8 stat = mmu->io[GB15_IO_STAT];
     u8 ly = mmu->io[GB15_IO_LY];
-    u8 mode = stat & (u8)0x03;
+    u8 mode;
     if (ly >= 144) {
         mode = 0x01;
         gpu->stat_raised = false;
@@ -103,10 +103,13 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             gpu->vblank_raised = false;
             ly = 0;
         }
-        bool coincidence = (ly == mmu->io[GB15_IO_LYC]);
-        if (coincidence && (stat & (u8)0x40)) {
+        if (ly == mmu->io[GB15_IO_LYC]) {
             stat |= (u8)0x04;
-            mmu->io[GB15_IO_IF] |= (u8)0x02;
+            if (stat & (u8)0x40) {
+                mmu->io[GB15_IO_IF] |= (u8)0x02;
+            }
+        } else {
+            stat &= ~(u8)0x04;
         }
         if (ly < 144) {
             if (lcdc & 0x01) {
