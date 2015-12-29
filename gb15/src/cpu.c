@@ -1026,6 +1026,9 @@ static const InstructionBundle INSTRUCTIONS[256] = {
 };
 
 static inline bool handle_interrupt(GB15State *state, GB15RegFile *regfile, GB15MemMap *memmap, u8 *rom) {
+    if (!memmap->ime) {
+        return true;
+    }
     u8 flags = memmap->io[GB15_IO_IF];
     if (flags == 0x00) {
         return true;
@@ -1061,7 +1064,7 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
         if (state->regfile.pc == 0x0100) {
             state = (void *)state;
         }
-        if (state->regfile.pc == 0x0204) {
+        if (state->regfile.pc == 0x0064) {
             state = (void *)state;
         }
         GB15MemMap *memmap = &state->memmap;
@@ -1069,29 +1072,29 @@ void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userd
         if (handle_interrupt(state, regfile, memmap, rom)) {
             u8 opcode = read8(memmap, rom, &regfile->pc);
             const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-//            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
-//                   regfile->af,
-//                   regfile->bc,
-//                   regfile->de,
-//                   regfile->hl,
-//                   regfile->pc - 1,
-//                   regfile->sp
-//            );
-//            u16 tmp_pc = regfile->pc;
-//            if (bundle->num_operands == 1) {
-//                printf(bundle->name, read8(memmap, rom, &tmp_pc));
-//            } else if (bundle->num_operands == 2) {
-//                printf(bundle->name, read16(memmap, rom, &tmp_pc));
-//            } else {
-//                printf(bundle->name);
-//            }
-//            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
-//                   memmap->io[GB15_IO_LCDC],
-//                   memmap->io[GB15_IO_STAT],
-//                   memmap->io[GB15_IO_LY],
-//                   memmap->io[GB15_IO_IE],
-//                   memmap->io[GB15_IO_IF]
-//            );
+            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
+                   regfile->af,
+                   regfile->bc,
+                   regfile->de,
+                   regfile->hl,
+                   regfile->pc - 1,
+                   regfile->sp
+            );
+            u16 tmp_pc = regfile->pc;
+            if (bundle->num_operands == 1) {
+                printf(bundle->name, read8(memmap, rom, &tmp_pc));
+            } else if (bundle->num_operands == 2) {
+                printf(bundle->name, read16(memmap, rom, &tmp_pc));
+            } else {
+                printf(bundle->name);
+            }
+            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
+                   memmap->io[GB15_IO_LCDC],
+                   memmap->io[GB15_IO_STAT],
+                   memmap->io[GB15_IO_LY],
+                   memmap->io[GB15_IO_IE],
+                   memmap->io[GB15_IO_IF]
+            );
             bundle->function(opcode, state, &state->regfile, &state->memmap, rom);
         }
         // Enable / Disable interrupts
