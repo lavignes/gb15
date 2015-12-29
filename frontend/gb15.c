@@ -18,7 +18,7 @@ void vblank_callback(GB15State *state, void *userdata) {
     void *pixels;
     int pitch;
     SDL_LockTexture(texture, NULL, &pixels, &pitch);
-    memcpy(pixels, state->lcd, sizeof(u32) * 23040);
+    memcpy(pixels, state->gpu.lcd, sizeof(u32) * 23040);
     SDL_UnlockTexture(texture);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);

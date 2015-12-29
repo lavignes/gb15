@@ -1,9 +1,19 @@
-#ifndef _GB15_REGFILE_H_
-#define _GB15_REGFILE_H_
+#ifndef _GB15_CPU_H_
+#define _GB15_CPU_H_
 
-#include <gb15/register.h>
+#include <gb15/types.h>
 
-typedef struct GB15RegFile {
+typedef struct GB15LongRegister {
+    union {
+        struct {
+            u8 l;
+            u8 h;
+        };
+        u16 value;
+    };
+} GB15LongRegister;
+
+typedef struct GB15Cpu {
     union {
         u16 pc;
         GB15LongRegister pc_fine;
@@ -58,6 +68,34 @@ typedef struct GB15RegFile {
         };
     };
 
-} GB15RegFile;
+    /**
+     * Interrupt Master Enable
+     */
+    bool ime;
 
-#endif /* _GB15_REGFILE_H_ */
+    /**
+     * Number of t-states left in the current instruction
+     */
+    u8 tclocks;
+
+    /**
+     * Interrupts Transitioning. DI or EI was just executed.
+     * This is the number of instructions left before the interrupt state
+     * will transition.
+     */
+    u8 di_mclocks;
+    u8 ei_mclocks;
+
+    /**
+     * Stop Instruction Active
+     */
+    bool stopped;
+
+    /**
+     * Halt Instruction Active
+     */
+    bool halted;
+
+} GB15Cpu;
+
+#endif /* _GB15_CPU_H_ */

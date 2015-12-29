@@ -3,7 +3,7 @@
 
 #include <gb15/types.h>
 
-typedef struct GB15MemMap {
+typedef struct GB15Mmu {
     /**
      * 0x8000-0x9FFF Video RAM (Two banks on Gameboy Color)
      */
@@ -40,16 +40,11 @@ typedef struct GB15MemMap {
     u8 hram[128];
 
     /**
-     * Interrupt Master Enable
-     */
-    bool ime;
-
-    /**
      * MBC Version
      */
     u8 mbc_version;
 
-} GB15MemMap;
+} GB15Mmu;
 
 typedef enum GB15IOPort {
 
@@ -149,7 +144,7 @@ typedef enum GB15IOPort {
 
 } GB15IOPort;
 
-GB15_EXTERN u8 gb15_memmap_read(GB15MemMap *memmap, u8 *rom, u16 address);
-GB15_EXTERN u8 gb15_memmap_write(GB15MemMap *memmap, u16 address, u8 value);
+GB15_EXTERN u8 gb15_mmu_read(GB15Mmu *mmu, u8 *rom, u16 address);
+GB15_EXTERN u8 gb15_mmu_write(GB15Mmu *mmu, u16 address, u8 value);
 
 #endif /* _GB15_MEMMAP_H_ */

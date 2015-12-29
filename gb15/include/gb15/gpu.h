@@ -1,7 +1,15 @@
-#ifndef _GB15_OAM_H_
-#define _GB15_OAM_H_
+#ifndef _GB15_GPU_H_
+#define _GB15_GPU_H_
 
 #include <gb15/types.h>
+
+struct GB15State;
+
+typedef struct GB15Gpu {
+    u32 tclocks;
+    u32 lcd[23040];
+
+} GB15Gpu;
 
 typedef enum GB15Obj {
     GB15_OBJ0 =  0xFE00,
@@ -64,4 +72,10 @@ typedef struct GB15Oam {
 
 } GB15Oam;
 
-#endif /* _GB15_OAM_H_ */
+typedef void (*GB15VBlankCallback)(struct GB15State *state, void *userdata);
+
+void gb15_gpu_init(struct GB15State *state);
+
+void gb15_gpu_tick(struct GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata);
+
+#endif /* _GB15_GPU_H_ */
