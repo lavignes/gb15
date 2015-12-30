@@ -8,7 +8,6 @@
 typedef struct RenderState {
     SDL_Renderer *renderer;
     SDL_Texture *texture;
-    u32 last_time;
 } RenderState;
 
 void vblank_callback(GB15State *state, void *userdata) {
