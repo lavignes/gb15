@@ -177,91 +177,79 @@ static inline void cp_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 value) {
 static inline u32 rlc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 carry;
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
+    set_n(cpu, false);
+    set_h(cpu, false);
     if (dest) { // a - l
-        clocks = 2;
         carry = (*dest & (u8)0x80) >> (u8)7;
         *dest = (*dest << (u8)1) | carry;
         set_c(cpu, carry);
         set_z(cpu, *dest == (u8)0x00);
-    } else { // (hl)
-        clocks = 4;
-        reg = gb15_mmu_read(mmu, rom, cpu->hl);
-        carry = (reg & (u8)0x80) >> (u8)7;
-        reg = (reg << (u8)1) | carry;
-        set_c(cpu, carry);
-        set_z(cpu, reg == (u8)0x00);
-        gb15_mmu_write(mmu, cpu->hl, reg);
+        return 2;
     }
-    set_n(cpu, false);
-    set_h(cpu, false);
-    return clocks;
+    reg = gb15_mmu_read(mmu, rom, cpu->hl);
+    carry = (reg & (u8)0x80) >> (u8)7;
+    reg = (reg << (u8)1) | carry;
+    set_c(cpu, carry);
+    set_z(cpu, reg == (u8)0x00);
+    gb15_mmu_write(mmu, cpu->hl, reg);
+    return 4;
 }
 
 static inline u32 rrc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 carry;
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
+    set_n(cpu, false);
+    set_h(cpu, false);
     if (dest) { // a - l
-        clocks = 2;
         carry = *dest & (u8)0x01;
         *dest = (*dest >> (u8)1) | (carry << (u8)7);
         set_c(cpu, carry);
         set_z(cpu, *dest == (u8)0x00);
-    } else { // (hl)
-        clocks = 4;
-        reg = gb15_mmu_read(mmu, rom, cpu->hl);
-        carry = reg & (u8)0x01;
-        reg = (reg >> (u8)1) | (carry << (u8)7);
-        set_c(cpu, carry);
-        set_z(cpu, reg  == (u8)0x00);
-        gb15_mmu_write(mmu, cpu->hl, reg);
+        return 2;
     }
-    set_n(cpu, false);
-    set_h(cpu, false);
-    return clocks;
+    reg = gb15_mmu_read(mmu, rom, cpu->hl);
+    carry = reg & (u8)0x01;
+    reg = (reg >> (u8)1) | (carry << (u8)7);
+    set_c(cpu, carry);
+    set_z(cpu, reg  == (u8)0x00);
+    gb15_mmu_write(mmu, cpu->hl, reg);
+    return 4;
 }
 
 static inline u32 rl_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry) {
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
+    set_n(cpu, false);
+    set_h(cpu, false);
     if (dest) { // a - l
-        clocks = 2;
         set_c(cpu, (*dest & (u8)0x80) >> (u8)7);
         *dest = (*dest << (u8)1) | carry;
         set_z(cpu, *dest == (u8)0x00);
-    } else { // (hl)
-        clocks = 4;
-        reg = gb15_mmu_read(mmu, rom, cpu->hl);
-        set_c(cpu, (reg & (u8)0x80) >> (u8)7);
-        reg = (reg << (u8)1) | carry;
-        set_z(cpu, reg == (u8)0x00);
-        gb15_mmu_write(mmu, cpu->hl, reg);
+        return 2;
     }
-    set_n(cpu, false);
-    set_h(cpu, false);
-    return clocks;
+    reg = gb15_mmu_read(mmu, rom, cpu->hl);
+    set_c(cpu, (reg & (u8)0x80) >> (u8)7);
+    reg = (reg << (u8)1) | carry;
+    set_z(cpu, reg == (u8)0x00);
+    gb15_mmu_write(mmu, cpu->hl, reg);
+    return 4;
 }
 
 static inline u32 rr_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry) {
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
+    set_n(cpu, false);
+    set_h(cpu, false);
     if (dest) { // a - l
-        clocks = 2;
         set_c(cpu, *dest & (u8)0x01);
         *dest = (*dest >> (u8)1) | (carry << (u8)7);
         set_z(cpu, *dest == (u8)0x00);
-    } else { // (hl)
-        clocks = 4;
-        reg = gb15_mmu_read(mmu, rom, cpu->hl);
-        set_c(cpu, reg & (u8)0x01);
-        reg = (reg >> (u8)1) | (carry << (u8)7);
-        set_z(cpu, reg == (u8)0x00);
-        gb15_mmu_write(mmu, cpu->hl, reg);
+        return 2;
     }
-    set_n(cpu, false);
-    set_h(cpu, false);
-    return clocks;
+    reg = gb15_mmu_read(mmu, rom, cpu->hl);
+    set_c(cpu, reg & (u8)0x01);
+    reg = (reg >> (u8)1) | (carry << (u8)7);
+    set_z(cpu, reg == (u8)0x00);
+    gb15_mmu_write(mmu, cpu->hl, reg);
+    return 4;
 }
 
 static inline bool test_cond(GB15Cpu *cpu, u8 cond) {
@@ -286,71 +274,69 @@ static inline u32 sla(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
 
 static inline u32 sra(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
+    set_n(cpu, false);
+    set_h(cpu, false);
     if (dest) { // a - l
-        clocks = 2;
         set_c(cpu, *dest & (u8)0x01);
         *dest = (*dest >> (u8)1) | (*dest & (u8)0x80);
         set_z(cpu, *dest == (u8)0x00);
-    } else { // (hl)
-        clocks = 4;
-        reg = gb15_mmu_read(mmu, rom, cpu->hl);
-        set_c(cpu, reg & (u8)0x01);
-        reg = (reg >> (u8)1) | (reg & (u8)0x80);
-        set_z(cpu, reg == (u8)0x00);
-        gb15_mmu_write(mmu, cpu->hl, reg);
+        return 2;
     }
-    set_n(cpu, false);
-    set_h(cpu, false);
-    return clocks;
+    reg = gb15_mmu_read(mmu, rom, cpu->hl);
+    set_c(cpu, reg & (u8)0x01);
+    reg = (reg >> (u8)1) | (reg & (u8)0x80);
+    set_z(cpu, reg == (u8)0x00);
+    gb15_mmu_write(mmu, cpu->hl, reg);
+    return 4;
 }
 
 static inline u32 swap(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
-    if (dest) { // a - l
-        clocks = 2;
-        *dest = ((*dest & (u8)0xF0) >> (u8)4) & ((*dest & (u8)0x0F) << (u8)4);
-        set_z(cpu, *dest == (u8)0x00);
-    } else { // (hl)
-        clocks = 4;
-        reg = gb15_mmu_read(mmu, rom, cpu->hl);
-        reg = ((reg & (u8)0xF0) >> (u8)4) & ((reg & (u8)0x0F) << (u8)4);
-        set_z(cpu, reg == (u8)0x00);
-        gb15_mmu_write(mmu, cpu->hl, reg);
-    }
     set_c(cpu, false);
     set_n(cpu, false);
     set_h(cpu, false);
-    return clocks;
+    if (dest) { // a - l
+        *dest = ((*dest & (u8)0xF0) >> (u8)4) & ((*dest & (u8)0x0F) << (u8)4);
+        set_z(cpu, *dest == (u8)0x00);
+        return 2;
+    }
+    reg = gb15_mmu_read(mmu, rom, cpu->hl);
+    reg = ((reg & (u8)0xF0) >> (u8)4) & ((reg & (u8)0x0F) << (u8)4);
+    set_z(cpu, reg == (u8)0x00);
+    gb15_mmu_write(mmu, cpu->hl, reg);
+    return 4;
 }
 
 static inline u32 bit(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 mask) {
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
-    if (dest) {
-        clocks = 2;
-        set_z(cpu, (*dest & mask) == (u8)0x00);
-    } else {
-        clocks = 4;
-        set_z(cpu, (gb15_mmu_read(mmu, rom, cpu->hl) & mask) == (u8)0x00);
-    }
     set_n(cpu, false);
     set_h(cpu, true);
-    return clocks;
+    if (dest) {
+        set_z(cpu, (*dest & mask) == (u8)0x00);
+        return 2;
+    }
+    set_z(cpu, (gb15_mmu_read(mmu, rom, cpu->hl) & mask) == (u8)0x00);
+    return 4;
 }
 
-static inline u32 set(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 bit, bool value) {
+static inline u32 set(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 bit) {
     u8 *dest = reg8(cpu, reg);
-    u32 clocks;
     if (dest) {
-        clocks = 2;
-        *dest |= (u8)value << bit;
-    } else {
-        clocks = 4;
-        gb15_mmu_write(mmu, cpu->hl, gb15_mmu_read(mmu, rom, cpu->hl) | ((u8)value << bit));
+        *dest |= (u8)1 << bit;
+        return 2;
     }
-    return clocks;
+    gb15_mmu_write(mmu, cpu->hl, gb15_mmu_read(mmu, rom, cpu->hl) | ((u8)1 << bit));
+    return 4;
+}
+
+static inline u32 reset(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 bit) {
+    u8 *dest = reg8(cpu, reg);
+    if (dest) {
+        *dest &= ~((u8)1 << bit);
+        return 2;
+    }
+    gb15_mmu_write(mmu, cpu->hl, gb15_mmu_read(mmu, rom, cpu->hl) & ~((u8)1 << bit));
+    return 4;
 }
 
 static inline u32 rst_core(GB15Cpu *cpu, GB15Mmu *mmu, u16 dest) {
@@ -749,10 +735,10 @@ static inline u32 cb(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
                 case 0x01:
                     return bit(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3));
                 case 0x02:
-                    return set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), false);
+                    return reset(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3));
                 default:
                 case 0x03:
-                    return set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), true);
+                    return set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3));
             }
     }
 }
