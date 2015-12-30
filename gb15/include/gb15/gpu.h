@@ -78,6 +78,6 @@ typedef void (*GB15VBlankCallback)(struct GB15State *state, void *userdata);
 
 void gb15_gpu_init(struct GB15State *state);
 
-void gb15_gpu_tick(struct GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata);
+void gb15_gpu_tick(struct GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata, u32 cycles);
 
 #endif /* _GB15_GPU_H_ */

@@ -74,19 +74,6 @@ typedef struct GB15Cpu {
     bool ime;
 
     /**
-     * Number of t-states left in the current instruction
-     */
-    u8 tclocks;
-
-    /**
-     * Interrupts Transitioning. DI or EI was just executed.
-     * This is the number of instructions left before the interrupt state
-     * will transition.
-     */
-    u8 di_mclocks;
-    u8 ei_mclocks;
-
-    /**
      * Stop Instruction Active
      */
     bool stopped;

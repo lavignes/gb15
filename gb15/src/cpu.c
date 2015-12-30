@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <gb15/cpu.h>
 #include <gb15/mmu.h>
@@ -170,20 +171,21 @@ static inline void cp_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 value) {
     set_h(cpu, (((s16)cpu->a - (s16)value) & (s16)0xF) > ((s16)cpu->a & (s16)0xF));
     set_c(cpu, (s16)overflow < (s16)0x00);
     set_n(cpu, true);
-    set_z(cpu, cpu->a == value);
+    set_z(cpu, overflow == (s16)0x00);
 }
 
-static inline void rlc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
+static inline u32 rlc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 carry;
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) { // a - l
-        cpu->tclocks = 8;
+        clocks = 2;
         carry = (*dest & (u8)0x80) >> (u8)7;
         *dest = (*dest << (u8)1) | carry;
         set_c(cpu, carry);
         set_z(cpu, *dest == (u8)0x00);
     } else { // (hl)
-        cpu->tclocks = 16;
+        clocks = 4;
         reg = gb15_mmu_read(mmu, rom, cpu->hl);
         carry = (reg & (u8)0x80) >> (u8)7;
         reg = (reg << (u8)1) | carry;
@@ -193,19 +195,21 @@ static inline void rlc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     }
     set_n(cpu, false);
     set_h(cpu, false);
+    return clocks;
 }
 
-static inline void rrc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
+static inline u32 rrc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 carry;
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) { // a - l
-        cpu->tclocks = 8;
+        clocks = 2;
         carry = *dest & (u8)0x01;
         *dest = (*dest >> (u8)1) | (carry << (u8)7);
         set_c(cpu, carry);
         set_z(cpu, *dest == (u8)0x00);
     } else { // (hl)
-        cpu->tclocks = 16;
+        clocks = 4;
         reg = gb15_mmu_read(mmu, rom, cpu->hl);
         carry = reg & (u8)0x01;
         reg = (reg >> (u8)1) | (carry << (u8)7);
@@ -215,17 +219,19 @@ static inline void rrc_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     }
     set_n(cpu, false);
     set_h(cpu, false);
+    return clocks;
 }
 
-static inline void rl_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry) {
+static inline u32 rl_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry) {
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) { // a - l
-        cpu->tclocks = 8;
+        clocks = 2;
         set_c(cpu, (*dest & (u8)0x80) >> (u8)7);
         *dest = (*dest << (u8)1) | carry;
         set_z(cpu, *dest == (u8)0x00);
     } else { // (hl)
-        cpu->tclocks = 16;
+        clocks = 4;
         reg = gb15_mmu_read(mmu, rom, cpu->hl);
         set_c(cpu, (reg & (u8)0x80) >> (u8)7);
         reg = (reg << (u8)1) | carry;
@@ -234,17 +240,19 @@ static inline void rl_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry
     }
     set_n(cpu, false);
     set_h(cpu, false);
+    return clocks;
 }
 
-static inline void rr_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry) {
+static inline u32 rr_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry) {
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) { // a - l
-        cpu->tclocks = 8;
+        clocks = 2;
         set_c(cpu, *dest & (u8)0x01);
         *dest = (*dest >> (u8)1) | (carry << (u8)7);
         set_z(cpu, *dest == (u8)0x00);
     } else { // (hl)
-        cpu->tclocks = 16;
+        clocks = 4;
         reg = gb15_mmu_read(mmu, rom, cpu->hl);
         set_c(cpu, reg & (u8)0x01);
         reg = (reg >> (u8)1) | (carry << (u8)7);
@@ -253,6 +261,7 @@ static inline void rr_core(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 carry
     }
     set_n(cpu, false);
     set_h(cpu, false);
+    return clocks;
 }
 
 static inline bool test_cond(GB15Cpu *cpu, u8 cond) {
@@ -271,19 +280,20 @@ static inline bool test_cond(GB15Cpu *cpu, u8 cond) {
     return false;
 }
 
-static inline void sla(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
-    rl_core(cpu, mmu, rom, reg, 0);
+static inline u32 sla(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
+    return rl_core(cpu, mmu, rom, reg, 0);
 }
 
-static inline void sra(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
+static inline u32 sra(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) { // a - l
-        cpu->tclocks = 8;
+        clocks = 2;
         set_c(cpu, *dest & (u8)0x01);
         *dest = (*dest >> (u8)1) | (*dest & (u8)0x80);
         set_z(cpu, *dest == (u8)0x00);
     } else { // (hl)
-        cpu->tclocks = 16;
+        clocks = 4;
         reg = gb15_mmu_read(mmu, rom, cpu->hl);
         set_c(cpu, reg & (u8)0x01);
         reg = (reg >> (u8)1) | (reg & (u8)0x80);
@@ -292,16 +302,18 @@ static inline void sra(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     }
     set_n(cpu, false);
     set_h(cpu, false);
+    return clocks;
 }
 
-static inline void swap(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
+static inline u32 swap(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) { // a - l
-        cpu->tclocks = 8;
+        clocks = 2;
         *dest = ((*dest & (u8)0xF0) >> (u8)4) & ((*dest & (u8)0x0F) << (u8)4);
         set_z(cpu, *dest == (u8)0x00);
     } else { // (hl)
-        cpu->tclocks = 16;
+        clocks = 4;
         reg = gb15_mmu_read(mmu, rom, cpu->hl);
         reg = ((reg & (u8)0xF0) >> (u8)4) & ((reg & (u8)0x0F) << (u8)4);
         set_z(cpu, reg == (u8)0x00);
@@ -310,156 +322,159 @@ static inline void swap(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg) {
     set_c(cpu, false);
     set_n(cpu, false);
     set_h(cpu, false);
+    return clocks;
 }
 
-static inline void bit(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 mask) {
+static inline u32 bit(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 mask) {
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) {
-        cpu->tclocks = 8;
+        clocks = 2;
         set_z(cpu, (*dest & mask) == (u8)0x00);
     } else {
-        cpu->tclocks = 16;
+        clocks = 4;
         set_z(cpu, (gb15_mmu_read(mmu, rom, cpu->hl) & mask) == (u8)0x00);
     }
     set_n(cpu, false);
     set_h(cpu, true);
+    return clocks;
 }
 
-static inline void set(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 bit, bool value) {
+static inline u32 set(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, u8 reg, u8 bit, bool value) {
     u8 *dest = reg8(cpu, reg);
+    u32 clocks;
     if (dest) {
-        cpu->tclocks = 8;
+        clocks = 2;
         *dest |= (u8)value << bit;
     } else {
-        cpu->tclocks = 16;
+        clocks = 4;
         gb15_mmu_write(mmu, cpu->hl, gb15_mmu_read(mmu, rom, cpu->hl) | ((u8)value << bit));
     }
+    return clocks;
 }
 
-static inline void rst_core(GB15Cpu *cpu, GB15Mmu *mmu, u16 dest) {
-    cpu->tclocks = 16;
+static inline u32 rst_core(GB15Cpu *cpu, GB15Mmu *mmu, u16 dest) {
     cpu->sp -= 2;
     write16(mmu, cpu->sp, cpu->pc);
     cpu->pc = dest;
+    return 4;
 }
 
-static inline void nop(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 nop(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+    return 1;
 }
 
-static inline void ld_rr_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 ld_rr_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     *reg16(cpu, (opcode & (u8)0x30) >> (u8)4) = read16(mmu, rom, &cpu->pc);
+    return 3;
 }
 
-static inline void ld_mem_rr_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ld_mem_rr_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, *reg16(cpu, (opcode & (u8)0x30) >> (u8)4), 0x07);
+    return 2;
 }
 
-static inline void inc_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 inc_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     (*reg16(cpu, (opcode & (u8)0x30) >> (u8)4))++;
+    return 2;
 }
 
-static inline void inc_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 inc_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u8 *reg = reg8(cpu, (opcode & (u8)0x38) >> (u8)3);
     set_h(cpu, (*reg & 0xF) == (u8)0x0);
     (*reg)++;
     set_z(cpu, *reg == (u8)0x00);
     set_n(cpu, false);
+    return 1;
 }
 
-static inline void dec_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 dec_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u8 *reg = reg8(cpu, (opcode & (u8)0x38) >> (u8)3);
     (*reg)--;
     set_z(cpu, *reg == (u8)0x00);
     set_n(cpu, true);
     set_h(cpu, (*reg & 0xF) == (u8)0xF);
+    return 1;
 }
 
-static inline void ld_r_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ld_r_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     *reg8(cpu, (opcode & (u8)0x38) >> (u8)3) = read8(mmu, rom, &cpu->pc);
+    return 2;
 }
 
-static inline void rlca(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 rlca(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     rlc_core(cpu, mmu, rom, 0x07);
-    cpu->tclocks = 4;
     set_z(cpu, false);
+    return 1;
 }
 
-static inline void ld_mem_u16_sp(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 ld_mem_u16_sp(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     write16(mmu, read16(mmu, rom, &cpu->pc), cpu->sp);
+    return 3;
 }
 
-static inline void ld_a_mem_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ld_a_mem_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = gb15_mmu_read(mmu, rom, *reg16(cpu, (opcode & (u8)0x30) >> (u8)4));
+    return 2;
 }
 
-static inline void add_hl_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 add_hl_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u32 overflow = (u32)cpu->hl + (u32)*reg16(cpu, (opcode & (u8)0x30) >> (u8)4);
     set_n(cpu, false);
     set_c(cpu, overflow > (u32)0xFFFF);
     set_h(cpu, (overflow & (u32)0x0FFF) < (cpu->hl & (u32)0x0FFF));
     cpu->hl = (u16)(overflow & (u32)0xFFFF);
+    return 2;
 }
 
-static inline void dec_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 dec_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     (*reg16(cpu, (opcode & (u8)0x30) >> (u8)4))--;
+    return 2;
 }
 
-static inline void rrc(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    rrc_core(cpu, mmu, rom, opcode & (u8)0x07);
+static inline u32 rrc(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+    return rrc_core(cpu, mmu, rom, opcode & (u8)0x07);
 }
 
-static inline void stop(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 stop(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->stopped = true;
     read8(mmu, rom, &cpu->pc);
+    return 1;
 }
 
-static inline void rla(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 rla(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     rl_core(cpu, mmu, rom, 0x07, get_c(cpu));
-    cpu->tclocks = 4;
     set_z(cpu, false);
+    return 1;
 }
 
-static inline void jr_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 jr_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->pc += signify8(read8(mmu, rom, &cpu->pc));
+    return 4;
 }
 
-static inline void rra(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 rra(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     rr_core(cpu, mmu, rom, 0x07, get_c(cpu));
-    cpu->tclocks = 4;
     set_z(cpu, false);
+    return 4;
 }
 
-static inline void jr_cond_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 jr_cond_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u8 dest = read8(mmu, rom, &cpu->pc);
     if (test_cond(cpu, (opcode & (u8)0x18) >> (u8)3)) {
-        cpu->tclocks = 12;
         cpu->pc += signify8(dest);
-    } else {
-        cpu->tclocks = 8;
+        return 3;
     }
+    return 2;
 }
 
-static inline void ldi_hl_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ldi_hl_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, cpu->hl, cpu->a);
     cpu->hl++;
+    return 2;
 }
 
-static inline void daa(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 daa(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u16 overflow = cpu->a;
     if (get_n(cpu)) {
         if (get_h(cpu)) {
@@ -482,403 +497,392 @@ static inline void daa(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     if (overflow >= (u16)0x100) {
         set_c(cpu, true);
     }
+    return 1;
 }
 
-static inline void ldi_a_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ldi_a_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = gb15_mmu_read(mmu, rom, cpu->hl);
     cpu->hl++;
+    return 2;
 }
 
-static inline void cpl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 cpl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = ~cpu->a;
     set_n(cpu, false);
     set_h(cpu, false);
+    return 1;
 }
 
-static inline void ldd_hl_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ldd_hl_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, cpu->hl, cpu->a);
     cpu->hl--;
+    return 2;
 }
 
-static inline void inc_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 inc_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u32 overflow = gb15_mmu_read(mmu, rom, cpu->hl);
     overflow = (overflow + (u32)1) & (u32)0xFF;
     gb15_mmu_write(mmu, cpu->hl, (u8)overflow);
     set_z(cpu, overflow == (u32)0x00);
     set_n(cpu, false);
     set_h(cpu, (overflow & (u32)0xF) == (u32)0x0);
+    return 3;
 }
 
-static inline void dec_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 dec_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u32 overflow = gb15_mmu_read(mmu, rom, cpu->hl);
     overflow = (overflow - (u32)1) & (u32)0xFF;
     gb15_mmu_write(mmu, cpu->hl, (u8)overflow);
     set_z(cpu, overflow == (u32)0x00);
     set_n(cpu, false);
     set_h(cpu, (overflow & (u32)0xF) == (u32)0xF);
+    return 3;
 }
 
-static inline void ld_mem_hl_n(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 ld_mem_hl_n(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, cpu->hl, read8(mmu, rom, &cpu->pc));
+    return 3;
 }
 
-static inline void scf(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 scf(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     set_n(cpu, false);
     set_h(cpu, false);
     set_c(cpu, true);
+    return 1;
 }
 
-static inline void ldd_a_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ldd_a_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = gb15_mmu_read(mmu, rom, cpu->hl);
     cpu->hl++;
+    return 2;
 }
 
-static inline void ccf(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 ccf(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     set_n(cpu, false);
     set_h(cpu, false);
     set_c(cpu, !get_c(cpu));
+    return 1;
 }
 
-static inline void ld_r_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 ld_r_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     *reg8(cpu, (opcode & (u8)0x38) >> (u8)3) = *reg8(cpu, opcode & (u8)0x07);
+    return 1;
 }
 
-static inline void ld_r_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ld_r_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     *reg8(cpu, (opcode & (u8)0x38) >> (u8)3) = gb15_mmu_read(mmu, rom, cpu->hl);
+    return 2;
 }
 
-static inline void ld_mem_hl_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ld_mem_hl_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, cpu->hl, *reg8(cpu, opcode & (u8)0x07));
+    return 2;
 }
 
-static inline void halt(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 halt(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+    // TODO: Save interrupt so we can detect when a HALT needs to exit
     cpu->halted = true;
+    return 1;
 }
 
-static inline void add_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 add_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     add_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07), 0);
+    return 1;
 }
 
-static inline void add_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 add_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     add_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl), 0);
+    return 2;
 }
 
-static inline void adc_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 adc_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     add_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07), get_c(cpu));
+    return 1;
 }
 
-static inline void adc_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 adc_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     add_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl), get_c(cpu));
+    return 2;
 }
 
-static inline void sub_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 sub_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     sub_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07));
+    return 1;
 }
 
-static inline void sub_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 sub_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     sub_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl));
+    return 2;
 }
 
-static inline void sbc_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 sbc_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     sbc_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07));
+    return 1;
 }
 
-static inline void sbc_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 sbc_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     sbc_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl));
+    return 2;
 }
 
-static inline void and_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 and_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     and_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07));
+    return 1;
 }
 
-static inline void and_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 and_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     and_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl));
+    return 2;
 }
 
-static inline void xor_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 xor_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     xor_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07));
+    return 1;
 }
 
-static inline void xor_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 xor_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     xor_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl));
+    return 2;
 }
 
-static inline void or_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 or_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     or_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07));
+    return 1;
 }
 
-static inline void or_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 or_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     or_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl));
+    return 2;
 }
 
-static inline void cp_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 cp_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cp_core(cpu, mmu, rom, *reg8(cpu, opcode & (u8)0x07));
+    return 1;
 }
 
-static inline void cp_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 cp_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cp_core(cpu, mmu, rom, gb15_mmu_read(mmu, rom, cpu->hl));
+    return 2;
 }
 
-static inline void ret_cond(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 ret_cond(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u8 dest = read8(mmu, rom, &cpu->sp);
     if (test_cond(cpu, (opcode & (u8)0x18) >> (u8)3)) {
-        cpu->tclocks = 20;
         cpu->pc += signify8(dest);
-    } else {
-        cpu->tclocks = 8;
+        return 5;
     }
+    return 2;
 }
 
-static inline void pop_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 pop_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     *reg16_push_pop(cpu, (opcode & (u8)0x30) >> (u8)4) = read16(mmu, rom, &cpu->sp);
+    return 3;
 }
 
-static inline void jp_cond_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 jp_cond_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u16 dest = read16(mmu, rom, &cpu->pc);
     if (test_cond(cpu, (opcode & (u8)0x18) >> (u8)3)) {
-        cpu->tclocks = 16;
         cpu->pc = dest;
-    } else {
-        cpu->tclocks = 12;
+        return 4;
     }
+    return 3;
 }
 
-static inline void jp_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 jp_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->pc = read16(mmu, rom, &cpu->pc);
+    return 4;
 }
 
-static inline void call_cond_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 call_cond_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     u16 dest = read16(mmu, rom, &cpu->pc);
     if (test_cond(cpu, (opcode & (u8)0x18) >> (u8)3)) {
-        cpu->tclocks = 24;
         cpu->sp -= 2;
         write16(mmu, cpu->sp, cpu->pc);
         cpu->pc = dest;
-    } else {
-        cpu->tclocks = 12;
+        return 6;
     }
+    return 3;
 }
 
-static inline void push_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 push_rr(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->sp -= 2;
     write16(mmu, cpu->sp, *reg16_push_pop(cpu, (opcode & (u8)0x30) >> (u8)4));
+    return 4;
 }
 
-static inline void add_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 add_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     add_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc), 0);
+    return 2;
 }
 
-static inline void rst(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 rst(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     rst_core(cpu, mmu, (u16)(opcode & (u8)0x38));
+    return 4;
 }
 
-static inline void ret(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 ret(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->pc = read16(mmu, rom, &cpu->sp);
+    return 4;
 }
 
-static inline void cb(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline u32 cb(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     opcode = read8(mmu, rom, &cpu->pc);
     u8 reg = opcode & (u8)0x07;
     switch (opcode >> (u8)3) {
         case 0x00:
-            rlc_core(cpu, mmu, rom, reg);
-            break;
+            return rlc_core(cpu, mmu, rom, reg);
         case 0x01:
-            rrc_core(cpu, mmu, rom, reg);
-            break;
+            return rrc_core(cpu, mmu, rom, reg);
         case 0x02:
-            rl_core(cpu, mmu, rom, reg, get_c(cpu));
-            break;
+            return rl_core(cpu, mmu, rom, reg, get_c(cpu));
         case 0x03:
-            rr_core(cpu, mmu, rom, reg, get_c(cpu));
+            return rr_core(cpu, mmu, rom, reg, get_c(cpu));
             break;
         case 0x04:
-            sla(cpu, mmu, rom, reg);
-            break;
+            return sla(cpu, mmu, rom, reg);
         case 0x05:
-            sra(cpu, mmu, rom, reg);
-            break;
+            return sra(cpu, mmu, rom, reg);
         case 0x06:
-            swap(cpu, mmu, rom, reg);
-            break;
+            return swap(cpu, mmu, rom, reg);
         case 0x07:
-            rr_core(cpu, mmu, rom, reg, 0);
-            break;
+            return rr_core(cpu, mmu, rom, reg, 0);
         default:
             switch ((opcode & (u8)0xC0) >> (u8)6) {
                 case 0x01:
-                    bit(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3));
-                    break;
+                    return bit(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3));
                 case 0x02:
-                    set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), false);
-                    break;
+                    return set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), false);
                 default:
                 case 0x03:
-                    set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), true);
-                    break;
+                    return set(cpu, mmu, rom, reg, (u8)1 << ((opcode & (u8)0x38) >> (u8)3), true);
             }
     }
 }
 
-static inline void call_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 24;
+static inline u32 call_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->sp -= 2;
     u16 dest = read16(mmu, rom, &cpu->pc);
     write16(mmu, cpu->sp, cpu->pc);
     cpu->pc = dest;
+    return 6;
 }
 
-static inline void adc_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 adc_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     add_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc), get_c(cpu));
+    return 2;
 }
 
-static inline void sub_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 sub_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     sub_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
+    return 2;
 }
 
-static inline void reti(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
-    cpu->ei_mclocks = 2;
+static inline u32 reti(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     mmu->io[GB15_IO_IE] = 0x01;
     cpu->pc = read16(mmu, rom, &cpu->sp);
+    return 4;
 }
 
-static inline void sbc_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 sbc_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     sbc_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
+    return 2;
 }
 
-static inline void ldh_mem_u8_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 ldh_mem_u8_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, (u16)0xFF00 + (u16)read8(mmu, rom, &cpu->pc), cpu->a);
+    return 3;
 }
 
-static inline void ldh_mem_c_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ldh_mem_c_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, (u16)0xFF00 + (u16)cpu->c, cpu->a);
+    return 2;
 }
 
-static inline void and_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 and_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     and_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
+    return 2;
 }
 
-static inline void add_sp_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 add_sp_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     s32 overflow = (s32)cpu->sp + (u32)signify8(read8(mmu, rom, &cpu->pc));
     set_c(cpu, overflow > (s32)0xFFFF);
     set_h(cpu, (overflow & (s32)0x0FFF) < (cpu->sp & (u32)0x0FFF));
     cpu->sp = (u16)(overflow & (s32)0xFFFF);
     set_n(cpu, false);
     set_z(cpu, false);
+    return 4;
 }
 
-static inline void jp_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
+static inline u32 jp_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->pc = cpu->hl;
+    return 1;
 }
 
-static inline void ld_mm_u16_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 ld_mm_u16_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     gb15_mmu_write(mmu, read16(mmu, rom, &cpu->pc), cpu->a);
+    return 4;
 }
 
-static inline void xor_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 xor_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     xor_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
+    return 2;
 }
 
-static inline void ldh_a_mem_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 ldh_a_mem_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = gb15_mmu_read(mmu, rom, (u16)0xFF00 + (u16)read8(mmu, rom, &cpu->pc));
+    return 3;
 }
 
-static inline void ldh_a_mem_c(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ldh_a_mem_c(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = gb15_mmu_read(mmu, rom, (u16)0xFF00 + (u16)cpu->c);
+    return 2;
 }
 
-static inline void di(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
-    cpu->di_mclocks = 2;
+static inline u32 di(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+    cpu->ime = false;
+    return 1;
 }
 
-static inline void or_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 or_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     or_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
+    return 2;
 }
 
-static inline void ld_hl_sp_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 12;
+static inline u32 ld_hl_sp_s8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     s32 overflow = (s32)cpu->sp + (u32)signify8(read8(mmu, rom, &cpu->pc));
     set_c(cpu, overflow > (s32)0xFFFF);
     set_h(cpu, (overflow & (s32)0x0FFF) < (cpu->hl & (u32)0x0FFF));
     cpu->hl = (u16)(overflow & (s32)0xFFFF);
     set_n(cpu, false);
     set_z(cpu, false);
+    return 3;
 }
 
-static inline void ld_sp_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 ld_sp_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->sp = cpu->hl;
+    return 2;
 }
 
-static inline void ld_a_mem_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 16;
+static inline u32 ld_a_mem_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cpu->a = gb15_mmu_read(mmu, rom, read16(mmu, rom, &cpu->pc));
+    return 4;
 }
 
-static inline void ei(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 4;
-    cpu->ei_mclocks = 2;
+static inline u32 ei(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+    cpu->ime = true;
+    return 1;
 }
 
-static inline void cp_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->tclocks = 8;
+static inline u32 cp_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     cp_core(cpu, mmu, rom, read8(mmu, rom, &cpu->pc));
+    return 2;
 }
 
 typedef struct InstructionBundle {
     u8 opcode;
     u8 num_operands;
     const char *name;
-    void (*function)(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom);
+    u32 (*function)(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom);
 } InstructionBundle;
 
 static const InstructionBundle INSTRUCTIONS[256] = {
@@ -1027,98 +1031,84 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0xFE, 1, "cp %.2X", cp_u8},              {0xFF, 0, "rst 38", rst}
 };
 
-static inline bool handle_interrupt(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
+static inline void service_interrupts(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     if (!cpu->ime) {
-        return true;
+        return;
     }
     u8 ints = mmu->io[GB15_IO_IF] & mmu->io[GB15_IO_IE];
     if (ints == 0x00) {
-        return true;
+        return;
     }
     if (ints & 0x01) { // vblank
         rst_core(cpu, mmu, 0x0040);
         mmu->io[GB15_IO_IF] ^= 0x01;
         cpu->ime = false;
-        return false;
+        return;
     }
     if (ints & 0x02) { // lcd stat
         rst_core(cpu, mmu, 0x0048);
         mmu->io[GB15_IO_IF] ^= 0x02;
         cpu->ime = false;
-        return false;
+        return;
     }
     if (ints & 0x04) { // timer
         rst_core(cpu, mmu, 0x0050);
         mmu->io[GB15_IO_IF] ^= 0x04;
         cpu->ime = false;
-        return false;
+        return;
     }
     if (ints & 0x08) { // serial
         rst_core(cpu, mmu, 0x0058);
         mmu->io[GB15_IO_IF] ^= 0x08;
         cpu->ime = false;
-        return false;
+        return;
     }
     if (ints & 0x10) { // joypad
         rst_core(cpu, mmu, 0x0060);
         mmu->io[GB15_IO_IF] ^= 0x10;
         cpu->ime = false;
-        return false;
+        return;
     }
-    return true;
+}
+
+static inline u32 cpu_tick(GB15State *state, u8 *rom) {
+    GB15Mmu *mmu = &state->mmu;
+    GB15Cpu *cpu = &state->cpu;
+    if (!cpu->halted) {
+        service_interrupts(cpu, mmu, rom);
+        u8 opcode = read8(mmu, rom, &cpu->pc);
+        const InstructionBundle *bundle = INSTRUCTIONS + opcode;
+        printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
+               cpu->af,
+               cpu->bc,
+               cpu->de,
+               cpu->hl,
+               cpu->pc - 1,
+               cpu->sp
+        );
+        u16 tmp_pc = cpu->pc;
+        if (bundle->num_operands == 1) {
+            printf(bundle->name, read8(mmu, rom, &tmp_pc));
+        } else if (bundle->num_operands == 2) {
+            printf(bundle->name, read16(mmu, rom, &tmp_pc));
+        } else {
+            printf(bundle->name);
+        }
+        printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
+               mmu->io[GB15_IO_LCDC],
+               mmu->io[GB15_IO_STAT],
+               mmu->io[GB15_IO_LY],
+               mmu->io[GB15_IO_IE],
+               mmu->io[GB15_IO_IF]
+        );
+        return bundle->function(opcode, cpu, mmu, rom);
+    }
+    abort();
 }
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
-    GB15Mmu *mmu = &state->mmu;
-    GB15Cpu *cpu = &state->cpu;
-    if (cpu->tclocks == 0) {
-        if (cpu->pc == 0x005D) {
-            cpu = (void *)cpu;
-        }
-        if (handle_interrupt(cpu, mmu, rom)) {
-            u8 opcode = read8(mmu, rom, &cpu->pc);
-            const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-//            printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
-//                   cpu->af,
-//                   cpu->bc,
-//                   cpu->de,
-//                   cpu->hl,
-//                   cpu->pc - 1,
-//                   cpu->sp
-//            );
-//            u16 tmp_pc = cpu->pc;
-//            if (bundle->num_operands == 1) {
-//                printf(bundle->name, read8(mmu, rom, &tmp_pc));
-//            } else if (bundle->num_operands == 2) {
-//                printf(bundle->name, read16(mmu, rom, &tmp_pc));
-//            } else {
-//                printf(bundle->name);
-//            }
-//            printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
-//                   mmu->io[GB15_IO_LCDC],
-//                   mmu->io[GB15_IO_STAT],
-//                   mmu->io[GB15_IO_LY],
-//                   mmu->io[GB15_IO_IE],
-//                   mmu->io[GB15_IO_IF]
-//            );
-            bundle->function(opcode, cpu, mmu, rom);
-        }
-        // Enable / Disable interrupts
-        if (cpu->di_mclocks) {
-            cpu->di_mclocks--;
-            if (cpu->di_mclocks == 0) {
-                cpu->ime = false;
-            }
-        }
-        if (cpu->ei_mclocks) {
-            cpu->ei_mclocks--;
-            if (cpu->ei_mclocks == 0) {
-                cpu->ime = false;
-            }
-        }
-    }
-    gb15_gpu_tick(state, rom, vblank, userdata);
-    cpu->tclocks--;
+    u32 cycles = cpu_tick(state, rom);
+    gb15_gpu_tick(state, rom, vblank, userdata, cycles);
 }
 
 void gb15_boot(GB15State *state)
