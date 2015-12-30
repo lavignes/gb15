@@ -370,7 +370,7 @@ static inline u32 ld_rr_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
 }
 
 static inline u32 ld_mem_rr_a(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    gb15_mmu_write(mmu, *reg16(cpu, (opcode & (u8)0x30) >> (u8)4), 0x07);
+    gb15_mmu_write(mmu, *reg16(cpu, (opcode & (u8)0x30) >> (u8)4), cpu->a);
     return 2;
 }
 
@@ -1118,7 +1118,7 @@ void gb15_boot(GB15State *state)
 {
     gb15_gpu_init(state);
     state->cpu.ime  = true;
-    GB15Mmu *mmu = &state->mmu;
-    mmu->io[GB15_IO_STAT] = 0x84;
-    mmu->io[GB15_IO_IF] = 0xE1;
+//    GB15Mmu *mmu = &state->mmu;
+//    mmu->io[GB15_IO_STAT] = 0x84;
+//    mmu->io[GB15_IO_IF] = 0xE1;
 }
