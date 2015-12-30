@@ -83,6 +83,11 @@ typedef struct GB15Cpu {
      */
     bool halted;
 
+    /**
+     * Interrupts saved on halt
+     */
+    u8 halt_flags;
+
 } GB15Cpu;
 
 #endif /* _GB15_CPU_H_ */

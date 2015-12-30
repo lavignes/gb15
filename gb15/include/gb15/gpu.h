@@ -8,7 +8,7 @@ struct GB15State;
 typedef struct GB15Gpu {
     bool stat_raised;
     bool vblank_raised;
-    u32 clocks;
+    s32 clocks;
     u32 lcd[23040];
 
 } GB15Gpu;

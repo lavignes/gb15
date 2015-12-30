@@ -580,8 +580,8 @@ static inline u32 ld_mem_hl_r(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
 }
 
 static inline u32 halt(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    // TODO: Save interrupt so we can detect when a HALT needs to exit
     cpu->halted = true;
+    cpu->halt_flags = mmu->io[GB15_IO_IF];
     return 1;
 }
 
@@ -666,9 +666,8 @@ static inline u32 cp_mem_hl(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
 }
 
 static inline u32 ret_cond(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    u8 dest = read8(mmu, rom, &cpu->sp);
     if (test_cond(cpu, (opcode & (u8)0x18) >> (u8)3)) {
-        cpu->pc += signify8(dest);
+        cpu->pc = read16(mmu, rom, &cpu->sp);
         return 5;
     }
     return 2;
@@ -737,7 +736,6 @@ static inline u32 cb(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
             return rl_core(cpu, mmu, rom, reg, get_c(cpu));
         case 0x03:
             return rr_core(cpu, mmu, rom, reg, get_c(cpu));
-            break;
         case 0x04:
             return sla(cpu, mmu, rom, reg);
         case 0x05:
@@ -760,8 +758,8 @@ static inline u32 cb(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
 }
 
 static inline u32 call_u16(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    cpu->sp -= 2;
     u16 dest = read16(mmu, rom, &cpu->pc);
+    cpu->sp -= 2;
     write16(mmu, cpu->sp, cpu->pc);
     cpu->pc = dest;
     return 6;
@@ -778,8 +776,8 @@ static inline u32 sub_u8(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
 }
 
 static inline u32 reti(u8 opcode, GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
-    mmu->io[GB15_IO_IE] = 0x01;
     cpu->pc = read16(mmu, rom, &cpu->sp);
+    cpu->ime = true;
     return 4;
 }
 
@@ -1074,36 +1072,41 @@ static inline void service_interrupts(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
 static inline u32 cpu_tick(GB15State *state, u8 *rom) {
     GB15Mmu *mmu = &state->mmu;
     GB15Cpu *cpu = &state->cpu;
-    if (!cpu->halted) {
-        service_interrupts(cpu, mmu, rom);
-        u8 opcode = read8(mmu, rom, &cpu->pc);
-        const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-        printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
-               cpu->af,
-               cpu->bc,
-               cpu->de,
-               cpu->hl,
-               cpu->pc - 1,
-               cpu->sp
-        );
-        u16 tmp_pc = cpu->pc;
-        if (bundle->num_operands == 1) {
-            printf(bundle->name, read8(mmu, rom, &tmp_pc));
-        } else if (bundle->num_operands == 2) {
-            printf(bundle->name, read16(mmu, rom, &tmp_pc));
-        } else {
-            printf(bundle->name);
+    if (cpu->halted) {
+        if (cpu->halt_flags != mmu->io[GB15_IO_IF]) {
+            cpu->halted = false;
         }
-        printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X\n",
-               mmu->io[GB15_IO_LCDC],
-               mmu->io[GB15_IO_STAT],
-               mmu->io[GB15_IO_LY],
-               mmu->io[GB15_IO_IE],
-               mmu->io[GB15_IO_IF]
-        );
-        return bundle->function(opcode, cpu, mmu, rom);
+        return 1;
     }
-    abort();
+    service_interrupts(cpu, mmu, rom);
+    u8 opcode = read8(mmu, rom, &cpu->pc);
+    const InstructionBundle *bundle = INSTRUCTIONS + opcode;
+//    printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
+//           cpu->af,
+//           cpu->bc,
+//           cpu->de,
+//           cpu->hl,
+//           cpu->pc - 1,
+//           cpu->sp
+//    );
+//    u16 tmp_pc = cpu->pc;
+//    if (bundle->num_operands == 1) {
+//        printf(bundle->name, read8(mmu, rom, &tmp_pc));
+//    } else if (bundle->num_operands == 2) {
+//        printf(bundle->name, read16(mmu, rom, &tmp_pc));
+//    } else {
+//        printf(bundle->name);
+//    }
+//    printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X|*sp=%.2X%.2X\n",
+//           mmu->io[GB15_IO_LCDC],
+//           mmu->io[GB15_IO_STAT],
+//           mmu->io[GB15_IO_LY],
+//           mmu->io[GB15_IO_IE],
+//           mmu->io[GB15_IO_IF],
+//           gb15_mmu_read(mmu, rom, cpu->sp + (u16)1),
+//           gb15_mmu_read(mmu, rom, cpu->sp)
+//    );
+    return bundle->function(opcode, cpu, mmu, rom);
 }
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
