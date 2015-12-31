@@ -24,7 +24,7 @@ static u8 mbc0_read(GB15Mmu *mmu, u8 *rom, u16 address) {
         case 0xFFFF:
             return mmu->io[address - (u16)0xFF00];
         case 0xFF80 ... 0xFFFE:
-            return mmu->io[address - (u16)0xFF80];
+            return mmu->hram[address - (u16)0xFF80];
         default:
             break;
     }
@@ -49,7 +49,7 @@ static u8 mbc0_write(GB15Mmu *mmu, u16 address, u8 value) {
         case 0xFFFF:
             return mmu->io[address - (u16)0xFF00] = value;
         case 0xFF80 ... 0xFFFE:
-            return mmu->io[address - (u16)0xFF80] = value;
+            return mmu->hram[address - (u16)0xFF80] = value;
         default:
             break;
     }

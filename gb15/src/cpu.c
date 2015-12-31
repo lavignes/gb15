@@ -1055,6 +1055,34 @@ static inline void service_interrupts(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom) {
     }
 }
 
+static inline void dbg_print(GB15Cpu *cpu, GB15Mmu *mmu, u8 *rom, const InstructionBundle *bundle) {
+    printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
+           cpu->af,
+           cpu->bc,
+           cpu->de,
+           cpu->hl,
+           cpu->pc - 1,
+           cpu->sp
+    );
+    u16 tmp_pc = cpu->pc;
+    if (bundle->num_operands == 1) {
+        printf(bundle->name, read8(mmu, rom, &tmp_pc));
+    } else if (bundle->num_operands == 2) {
+        printf(bundle->name, read16(mmu, rom, &tmp_pc));
+    } else {
+        printf(bundle->name);
+    }
+    printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X|*sp=%.2X%.2X\n",
+           mmu->io[GB15_IO_LCDC],
+           mmu->io[GB15_IO_STAT],
+           mmu->io[GB15_IO_LY],
+           mmu->io[GB15_IO_IE],
+           mmu->io[GB15_IO_IF],
+           gb15_mmu_read(mmu, rom, cpu->sp + (u16)1),
+           gb15_mmu_read(mmu, rom, cpu->sp)
+    );
+}
+
 static inline u32 cpu_tick(GB15State *state, u8 *rom) {
     GB15Mmu *mmu = &state->mmu;
     GB15Cpu *cpu = &state->cpu;
@@ -1067,37 +1095,12 @@ static inline u32 cpu_tick(GB15State *state, u8 *rom) {
     service_interrupts(cpu, mmu, rom);
     u8 opcode = read8(mmu, rom, &cpu->pc);
     const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-//    printf("af=%.4X|bc=%.4X|de=%.4X|hl=%.4X|pc=%.4X|sp=%.4X :: ",
-//           cpu->af,
-//           cpu->bc,
-//           cpu->de,
-//           cpu->hl,
-//           cpu->pc - 1,
-//           cpu->sp
-//    );
-//    u16 tmp_pc = cpu->pc;
-//    if (bundle->num_operands == 1) {
-//        printf(bundle->name, read8(mmu, rom, &tmp_pc));
-//    } else if (bundle->num_operands == 2) {
-//        printf(bundle->name, read16(mmu, rom, &tmp_pc));
-//    } else {
-//        printf(bundle->name);
-//    }
-//    printf("\n\tlcdc=%.2X|stat=%.2X|ly=%.2X|ie=%.2X|if=%.2X|*sp=%.2X%.2X\n",
-//           mmu->io[GB15_IO_LCDC],
-//           mmu->io[GB15_IO_STAT],
-//           mmu->io[GB15_IO_LY],
-//           mmu->io[GB15_IO_IE],
-//           mmu->io[GB15_IO_IF],
-//           gb15_mmu_read(mmu, rom, cpu->sp + (u16)1),
-//           gb15_mmu_read(mmu, rom, cpu->sp)
-//    );
+//    dbg_print(cpu, mmu, rom, bundle);
     return bundle->function(opcode, cpu, mmu, rom);
 }
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
-    u32 cycles = cpu_tick(state, rom);
-    gb15_gpu_tick(state, rom, vblank, userdata, cycles);
+    gb15_gpu_tick(state, rom, vblank, userdata, cpu_tick(state, rom));
 }
 
 void gb15_boot(GB15State *state)
