@@ -37,7 +37,7 @@ static u32 bg_pixel_at(GB15Mmu *mmu, u8 x, u8 y, u8 lcdc, u8 scx, u8 scy, u8 bgp
     u8 tile_y = (y + scy) >> (u8)3; // / 8
     u16 tile_idx = ((u16)tile_y << (u16)5) + (u16)tile_x; // * 32 + tile_x
     u8 tile_code = gb15_mmu_read(mmu, NULL, bg_tile_map_table + tile_idx);
-    u16 bg_pattern_table = (lcdc & (u8)0x10)? ((u16)0x8000 + tile_code * (u16)16) : (u16)((s16)0x8800 + signify8(tile_code) * (u16)16);
+    u16 bg_pattern_table = (lcdc & (u8)0x10)? ((u16)0x8000 + (tile_code * (u16)16)) : (u16)((s16)0x9000 + (signify8(tile_code) * (s16)16));
     u8 char_x = (x + scx) & (u8)0x07;            // % 8
     u8 char_y = ((y + scy) & (u8)0x07) << (u8)1; // % 8 * 2
     u8 bitlow = (u8)((gb15_mmu_read(mmu, NULL, bg_pattern_table + char_y) & ((u8)0x80 >> char_x)) != (u8)0);
