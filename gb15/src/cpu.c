@@ -5,12 +5,7 @@
 #include <gb15/mmu.h>
 #include <gb15/gb15.h>
 
-static inline s8 signify8(u8 value) {
-    if (value <= (u8)0x7F) {
-        return value;
-    }
-    return -(s8)(((~value) + (u8)1) & (u8)0xFF);
-}
+#include "util.h"
 
 static inline u8 read8(GB15Mmu *mmu, u8 *rom, u16 *pc) {
     u8 tmp8 = gb15_mmu_read(mmu, rom, *pc);

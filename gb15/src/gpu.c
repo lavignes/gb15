@@ -3,12 +3,7 @@
 #include <gb15/gpu.h>
 #include <gb15/gb15.h>
 
-static inline s8 signify8(u8 value) {
-    if (value <= (u8)0x7F) {
-        return value;
-    }
-    return -(s8)(((~value) + (u8)1) & (u8)0xFF);
-}
+#include "util.h"
 
 void gb15_gpu_init(GB15State *state)
 {

@@ -6,6 +6,9 @@ set(SOURCES
         ${SOURCE_DIR}/mmu.c
         ${SOURCE_DIR}/gpu.c
         ${SOURCE_DIR}/bios.c
+        ${SOURCE_DIR}/util.c
+
+        ${SOURCE_DIR}/util.h
 )
 
 set(HEADERS
@@ -17,6 +20,6 @@ set(HEADERS
         ${HEADER_DIR}/bios.h
 )
 
-add_library(libgb15  ${SOURCES} ${HEADERS})
+add_library(libgb15 ${SOURCES} ${HEADERS})
 set_target_properties(libgb15 PROPERTIES OUTPUT_NAME gb15)
 target_include_directories(libgb15 PUBLIC include)

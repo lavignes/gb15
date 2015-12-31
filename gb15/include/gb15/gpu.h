@@ -64,7 +64,7 @@ typedef enum GB15OamFlag {
     GB15_OAM_FLAG_DMG_COLOR = 1 << 4,
     GB15_OAM_FLAG_CHR =       1 << 3,
 
-}GB15OamFlag;
+} GB15OamFlag;
 
 typedef struct GB15Oam {
     u8 y;
