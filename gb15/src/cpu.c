@@ -874,7 +874,7 @@ static const InstructionBundle INSTRUCTIONS[256] = {
         {0x0C, 0, "inc c", inc_r},                {0x0D, 0, "dec c", dec_r},
         {0x0E, 1, "ld c, %.2X", ld_r_u8},         {0x0F, 0, "rrc", rrc},
 
-        {0x10, 1, "stop %.2X", stop},             {0x11, 0, "ld de, u16", ld_rr_u16},
+        {0x10, 1, "stop %.2X", stop},             {0x11, 2, "ld de, %.4X", ld_rr_u16},
         {0x12, 0, "ld (de), a", ld_mem_rr_a},     {0x13, 0, "inc de", inc_rr},
         {0x14, 0, "inc d", inc_r},                {0x15, 0, "dec d", dec_r},
         {0x16, 1, "ld d, %.2X", ld_r_u8},         {0x17, 0, "rla", rla},
@@ -1090,12 +1090,18 @@ static inline u32 cpu_tick(GB15State *state, u8 *rom) {
     service_interrupts(cpu, mmu, rom);
     u8 opcode = read8(mmu, rom, &cpu->pc);
     const InstructionBundle *bundle = INSTRUCTIONS + opcode;
-//    dbg_print(cpu, mmu, rom, bundle);
+    dbg_print(cpu, mmu, rom, bundle);
+    if (cpu->pc - 1 == 0xC252) {
+        cpu = (void *)cpu;
+    }
     return bundle->function(opcode, cpu, mmu, rom);
 }
 
 void gb15_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
-    gb15_gpu_tick(state, rom, vblank, userdata, cpu_tick(state, rom));
+    u32 cycles = cpu_tick(state, rom);
+    while (cycles--) {
+        gb15_gpu_tick(state, rom, vblank, userdata);
+    }
 }
 
 void gb15_boot(GB15State *state)

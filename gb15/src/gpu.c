@@ -52,7 +52,7 @@ static u32 bg_pixel_at(GB15Mmu *mmu, u8 x, u8 y, u8 lcdc, u8 scx, u8 scy, u8 bgp
     return 0x000000FF;
 }
 
-void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata, u32 cycles) {
+void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *userdata) {
     GB15Gpu *gpu = &state->gpu;
     GB15Mmu *mmu = &state->mmu;
     u8 lcdc = mmu->io[GB15_IO_LCDC];
@@ -81,8 +81,8 @@ void gb15_gpu_tick(GB15State *state, u8 *rom, GB15VBlankCallback vblank, void *u
             gpu->stat_raised = true;
         }
     }
-    gpu->clocks -= cycles;
-    if (gpu->clocks <= 0) {
+    gpu->clocks--;
+    if (gpu->clocks == 0) {
         gpu->clocks += 456;
         ly++;
         if (ly == 144) {

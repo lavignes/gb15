@@ -15,7 +15,7 @@ static u8 mbc0_read(GB15Mmu *mmu, u8 *rom, u16 address) {
         case 0xC000 ... 0xCFFF:
             return mmu->wram[address - (u16)0xC000];
         case 0xD000 ... 0xDFFF:
-            return mmu->sram[mmu->io[GB15_IO_VBK] & 0x07][address - (u16)0xD000];
+            return mmu->sram[mmu->io[GB15_IO_SVBK] & 0x07][address - (u16)0xD000];
         case 0xE000 ... 0xFDFF:
             return mbc0_read(mmu, rom, address - (u16)0x1000);
         case 0xFE00 ... 0xFE9F:
@@ -40,7 +40,7 @@ static u8 mbc0_write(GB15Mmu *mmu, u16 address, u8 value) {
         case 0xC000 ... 0xCFFF:
             return mmu->wram[address - (u16)0xC000] = value;
         case 0xD000 ... 0xDFFF:
-            return mmu->sram[mmu->io[GB15_IO_VBK] & 0x07][address - (u16)0xD000] = value;
+            return mmu->sram[mmu->io[GB15_IO_SVBK] & 0x07][address - (u16)0xD000] = value;
         case 0xE000 ... 0xFDFF:
             return mbc0_write(mmu, address - (u16)0x1000, value);
         case 0xFE00 ... 0xFE9F:
